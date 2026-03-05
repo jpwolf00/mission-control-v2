@@ -56,7 +56,7 @@ export function dispatchStory(
   const sessionId = uuidv4();
   const gateTyped = gate as Gate;
   const lockResult = acquireLock(storyId, gateTyped, sessionId);
-  if (!lockResult.success) {
+  if (!lockResult.ok) {
     return {
       success: false,
       error: 'Dispatch conflict: story already has active session',
