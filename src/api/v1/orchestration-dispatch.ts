@@ -98,7 +98,7 @@ export function dispatchStoryHandler(input: DispatchInput): DispatchResult {
   }
 
   // Step 3: Run dispatch preconditions from story domain
-  const preconditionResult = validateDispatchPreconditions(story, gate);
+  const preconditionResult = validateDispatchPreconditions(story);
   if (!preconditionResult.satisfied) {
     return {
       ok: false,
