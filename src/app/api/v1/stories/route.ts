@@ -4,7 +4,7 @@ import { getStoriesFromDB, createStoryInDB, approveRequirementsInDB, getStoryByI
 
 const createStorySchema = z.object({
   title: z.string().min(1),
-  description: z.string().optional(),
+  description: z.string(),
   requirementsArtifactId: z.string().optional(),
   acceptanceCriteria: z.array(z.string()).optional(),
   priority: z.enum(['low', 'medium', 'high', 'critical']).optional(),
