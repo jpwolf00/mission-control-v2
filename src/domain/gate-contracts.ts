@@ -4,7 +4,8 @@
 import { Gate, GATES } from "./workflow-types.js";
 
 // Re-export Gate for convenience
-export { Gate, GATES };
+export type { Gate } from './workflow-types';
+export { GATES };
 
 // Gate completion status types
 export const COMPLETION_STATUSES = ["pending", "approved", "rejected", "needs_revision"] as const;
