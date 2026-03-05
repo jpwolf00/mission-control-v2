@@ -6,6 +6,7 @@ RUN apk add --no-cache libc6-compat
 WORKDIR /app
 COPY package.json package-lock.json* ./
 RUN npm ci
+RUN npm install prisma@5.22.0 @prisma/client@5.22.0
 
 # Build
 FROM base AS builder
