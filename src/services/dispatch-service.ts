@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
-import { getStoryById } from '../story-store';
+import { getStoryById } from './story-store';
 import { acquireLock, releaseLock } from './lock-service';
 
 interface DispatchResult {

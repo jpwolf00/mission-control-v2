@@ -1,4 +1,4 @@
-import type { Story } from "../domain/story.js";
+import type { Story } from "../domain/story";
 
 /**
  * In-memory store for stories.

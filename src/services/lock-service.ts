@@ -1,6 +1,6 @@
-import type { Gate } from "../domain/workflow-types.js";
-import type { DispatchLock, LockAcquireResult, LockReleaseResult } from "../domain/dispatch-lock.js";
-import { isLockActive, isLockExpired } from "../domain/dispatch-lock.js";
+import type { Gate } from "../domain/workflow-types";
+import type { DispatchLock, LockAcquireResult, LockReleaseResult } from "../domain/dispatch-lock";
+import { isLockActive, isLockExpired } from "../domain/dispatch-lock";
 
 /**
  * In-memory store for dispatch locks.
