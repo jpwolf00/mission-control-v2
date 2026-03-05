@@ -85,7 +85,7 @@ export function getSession(sessionId: string) {
 export function completeSession(sessionId: string) {
   const session = activeSessions.get(sessionId);
   if (session) {
-    releaseLock(session.storyId, session.gate);
+    releaseLock(session.storyId, session.gate as Gate, sessionId);
     activeSessions.delete(sessionId);
   }
 }
