@@ -10,7 +10,7 @@
  */
 
 import { prisma } from './prisma';
-import { Gate } from './orchestration/state-machine';
+import { Gate } from '../domain/workflow-types';
 
 // ============================================================
 // Configuration Types
