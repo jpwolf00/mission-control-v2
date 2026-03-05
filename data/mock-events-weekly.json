@@ -1,0 +1,13 @@
+[
+  { "type": "transition", "storyId": "story-1", "gate": "architect", "status": "success", "timestamp": "2026-03-01T10:00:00Z", "durationMs": 120000 },
+  { "type": "transition", "storyId": "story-1", "gate": "implementer", "status": "success", "timestamp": "2026-03-01T12:00:00Z", "durationMs": 180000 },
+  { "type": "transition", "storyId": "story-1", "gate": "reviewer-a", "status": "success", "timestamp": "2026-03-01T14:00:00Z", "durationMs": 90000 },
+  { "type": "transition", "storyId": "story-2", "gate": "architect", "status": "success", "timestamp": "2026-03-02T09:00:00Z", "durationMs": 150000 },
+  { "type": "transition", "storyId": "story-2", "gate": "implementer", "status": "failed", "timestamp": "2026-03-02T11:00:00Z", "durationMs": 300000, "error": "build_failed" },
+  { "type": "retry", "storyId": "story-2", "gate": "implementer", "timestamp": "2026-03-02T11:05:00Z" },
+  { "type": "transition", "storyId": "story-2", "gate": "implementer", "status": "success", "timestamp": "2026-03-02T13:00:00Z", "durationMs": 200000 },
+  { "type": "stall", "storyId": "story-3", "gate": "reviewer-a", "timestamp": "2026-03-03T10:00:00Z", "durationMs": 1800000 },
+  { "type": "transition", "storyId": "story-4", "gate": "operator", "status": "success", "timestamp": "2026-03-03T15:00:00Z", "durationMs": 60000 },
+  { "type": "dispatch_conflict", "storyId": "story-5", "timestamp": "2026-03-04T09:00:00Z" },
+  { "type": "transition", "storyId": "story-5", "gate": "architect", "status": "success", "timestamp": "2026-03-04T10:00:00Z", "durationMs": 110000 }
+]

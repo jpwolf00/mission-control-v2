@@ -12,7 +12,8 @@
     "test:coverage": "vitest --coverage",
     "test:run": "vitest run",
     "test:browser": "node tests/review-validation/browser-click-test.js",
-    "test:smoke": "node tests/review-validation/ui-smoke-test.js"
+    "test:smoke": "node tests/review-validation/ui-smoke-test.js",
+    "report:slo:weekly": "npx tsx scripts/generate-weekly-slo-report.ts"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.4.1",
