@@ -99,10 +99,10 @@ export function dispatchStoryHandler(input: DispatchInput): DispatchResult {
 
   // Step 3: Run dispatch preconditions from story domain
   const preconditionResult = validateDispatchPreconditions(story);
-  if (!preconditionResult.satisfied) {
+  if (!preconditionResult.valid) {
     return {
       ok: false,
-      error: preconditionResult.reason || "Dispatch preconditions not satisfied",
+      error: preconditionResult.error || "Dispatch preconditions not satisfied",
       reason: "precondition"
     };
   }
