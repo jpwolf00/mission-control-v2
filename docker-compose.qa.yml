@@ -5,7 +5,7 @@ services:
     image: postgres:16-alpine
     environment:
       POSTGRES_USER: mc2
-      POSTGRES_PASSWORD: mc2password
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD required}
       POSTGRES_DB: mission_control_qa
     ports:
       - "5433:5432"
@@ -22,7 +22,7 @@ services:
     ports:
       - "3001:3000"
     environment:
-      DATABASE_URL: postgresql://mc2:mc2password@db-qa:5432/mission_control_qa
+      DATABASE_URL: postgresql://mc2:${DB_PASSWORD:?DB_PASSWORD required}@db-qa:5432/mission_control_qa
       NODE_ENV: production
       NEXT_PUBLIC_API_URL: http://localhost:3001
     depends_on:
