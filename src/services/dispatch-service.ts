@@ -52,7 +52,8 @@ export function dispatchStory(
     };
   }
 
-  // Acquire lock
+  // Generate session ID and acquire lock
+  const sessionId = uuidv4();
   const gateTyped = gate as Gate;
   const lockResult = acquireLock(storyId, gateTyped, sessionId);
   if (!lockResult.success) {
