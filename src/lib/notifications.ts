@@ -129,7 +129,7 @@ export interface GateCompletedNotification {
   storyId: string;
   storyTitle: string;
   gate: Gate;
-  agentType: string;
+  role: string;
   summary: string;
   duration?: number;
 }
@@ -139,7 +139,7 @@ export interface GateFailedNotification {
   storyId: string;
   storyTitle: string;
   gate: Gate;
-  agentType: string;
+  role: string;
   failureReason: string;
   duration?: number;
 }
@@ -149,14 +149,14 @@ export interface StuckRunNotification {
   storyId: string;
   storyTitle: string;
   gate: Gate;
-  agentType: string;
+  role: string;
   stuckDurationMinutes: number;
   lastActivity?: string;
 }
 
 export interface BudgetWarningNotification {
   eventType: 'budget_warning';
-  agentType: string;
+  role: string;
   tokensUsed: number;
   tokensLimit: number;
   percentageUsed: number;
@@ -166,7 +166,7 @@ export interface StallDetectedNotification {
   eventType: 'stall_detected';
   storyId: string;
   storyTitle: string;
-  agentType: string;
+  role: string;
   stallType: 'network' | 'process' | 'session';
   severity: 'warning' | 'critical';
   detail: string;
@@ -271,7 +271,7 @@ function formatSlackMessage(
       text = p.summary.substring(0, 200);
       fields = [
         { title: 'Story', value: truncate(p.storyTitle, 50), short: true },
-        { title: 'Agent', value: p.agentType, short: true },
+        { title: 'Agent', value: p.role, short: true },
         { title: 'Duration', value: p.duration ? formatDuration(p.duration) : 'N/A', short: true },
       ];
       break;
@@ -282,7 +282,7 @@ function formatSlackMessage(
       text = p.failureReason.substring(0, 200);
       fields = [
         { title: 'Story', value: truncate(p.storyTitle, 50), short: true },
-        { title: 'Agent', value: p.agentType, short: true },
+        { title: 'Agent', value: p.role, short: true },
         { title: 'Duration', value: p.duration ? formatDuration(p.duration) : 'N/A', short: true },
       ];
       break;
@@ -293,7 +293,7 @@ function formatSlackMessage(
       text = `No activity for ${p.stuckDurationMinutes} minutes`;
       fields = [
         { title: 'Story', value: truncate(p.storyTitle, 50), short: true },
-        { title: 'Agent', value: p.agentType, short: true },
+        { title: 'Agent', value: p.role, short: true },
         { title: 'Stuck Duration', value: `${p.stuckDurationMinutes} min`, short: true },
       ];
       break;
@@ -303,7 +303,7 @@ function formatSlackMessage(
       title = `💰 Budget Warning`;
       text = `${p.percentageUsed}% of daily budget used`;
       fields = [
-        { title: 'Agent', value: p.agentType, short: true },
+        { title: 'Agent', value: p.role, short: true },
         { title: 'Used', value: formatNumber(p.tokensUsed), short: true },
         { title: 'Limit', value: formatNumber(p.tokensLimit), short: true },
       ];
@@ -315,7 +315,7 @@ function formatSlackMessage(
       text = p.detail;
       fields = [
         { title: 'Story', value: truncate(p.storyTitle, 50), short: true },
-        { title: 'Agent', value: p.agentType, short: true },
+        { title: 'Agent', value: p.role, short: true },
         { title: 'Severity', value: p.severity.toUpperCase(), short: true },
       ];
       break;
@@ -411,7 +411,7 @@ function formatEmailMessage(
         <h2>✅ ${title}</h2>
         <p><strong>Story:</strong> ${p.storyTitle}</p>
         <p><strong>Gate:</strong> ${p.gate}</p>
-        <p><strong>Agent:</strong> ${p.agentType}</p>
+        <p><strong>Agent:</strong> ${p.role}</p>
         <p><strong>Summary:</strong> ${p.summary}</p>
         ${p.duration ? `<p><strong>Duration:</strong> ${formatDuration(p.duration)}</p>` : ''}
       `;
@@ -424,7 +424,7 @@ function formatEmailMessage(
         <h2>❌ ${title}</h2>
         <p><strong>Story:</strong> ${p.storyTitle}</p>
         <p><strong>Gate:</strong> ${p.gate}</p>
-        <p><strong>Agent:</strong> ${p.agentType}</p>
+        <p><strong>Agent:</strong> ${p.role}</p>
         <p><strong>Failure Reason:</strong> ${p.failureReason}</p>
         ${p.duration ? `<p><strong>Duration:</strong> ${formatDuration(p.duration)}</p>` : ''}
       `;
@@ -437,7 +437,7 @@ function formatEmailMessage(
         <h2>⚠️ ${title}</h2>
         <p><strong>Story:</strong> ${p.storyTitle}</p>
         <p><strong>Gate:</strong> ${p.gate}</p>
-        <p><strong>Agent:</strong> ${p.agentType}</p>
+        <p><strong>Agent:</strong> ${p.role}</p>
         <p><strong>Stuck Duration:</strong> ${p.stuckDurationMinutes} minutes</p>
         ${p.lastActivity ? `<p><strong>Last Activity:</strong> ${p.lastActivity}</p>` : ''}
       `;
@@ -448,7 +448,7 @@ function formatEmailMessage(
       title = `Budget Warning: ${p.percentageUsed}% used`;
       body = `
         <h2>💰 ${title}</h2>
-        <p><strong>Agent:</strong> ${p.agentType}</p>
+        <p><strong>Agent:</strong> ${p.role}</p>
         <p><strong>Tokens Used:</strong> ${formatNumber(p.tokensUsed)}</p>
         <p><strong>Token Limit:</strong> ${formatNumber(p.tokensLimit)}</p>
         <p><strong>Percentage Used:</strong> ${p.percentageUsed}%</p>
@@ -461,7 +461,7 @@ function formatEmailMessage(
       body = `
         <h2>${title}</h2>
         <p><strong>Story:</strong> ${p.storyTitle}</p>
-        <p><strong>Agent:</strong> ${p.agentType}</p>
+        <p><strong>Agent:</strong> ${p.role}</p>
         <p><strong>Stall Type:</strong> ${p.stallType}</p>
         <p><strong>Severity:</strong> ${p.severity.toUpperCase()}</p>
         <p><strong>Detail:</strong> ${p.detail}</p>
@@ -555,7 +555,7 @@ export async function notifyGateCompleted(
     storyId,
     storyTitle: story.title,
     gate,
-    agentType: session?.agentType || gate,
+    role: session?.role || gate,
     summary,
     duration,
   };
@@ -587,7 +587,7 @@ export async function notifyGateFailed(
     storyId,
     storyTitle: story.title,
     gate,
-    agentType: session?.agentType || gate,
+    role: session?.role || gate,
     failureReason,
     duration,
   };
@@ -636,7 +636,7 @@ export async function checkAndNotifyStuckRuns(
         storyId: session.storyId || 'unknown',
         storyTitle: session.story?.title || 'Unknown Story',
         gate,
-        agentType: session.agentType,
+        role: session.role,
         stuckDurationMinutes: idleMinutes,
         lastActivity: session.lastTool || undefined,
       };
@@ -659,14 +659,14 @@ export async function checkAndNotifyStuckRuns(
  * Notify budget warning
  */
 export async function notifyBudgetWarning(
-  agentType: string,
+  role: string,
   tokensUsed: number,
   tokensLimit: number,
   percentageUsed: number
 ): Promise<{ success: boolean; errors: string[] }> {
   const payload: BudgetWarningNotification = {
     eventType: 'budget_warning',
-    agentType,
+    role,
     tokensUsed,
     tokensLimit,
     percentageUsed,
@@ -680,7 +680,7 @@ export async function notifyBudgetWarning(
  */
 export async function notifyStallDetected(
   storyId: string,
-  agentType: string,
+  role: string,
   stallType: 'network' | 'process' | 'session',
   severity: 'warning' | 'critical',
   detail: string
@@ -691,7 +691,7 @@ export async function notifyStallDetected(
     eventType: 'stall_detected',
     storyId,
     storyTitle: story?.title || 'Unknown Story',
-    agentType,
+    role,
     stallType,
     severity,
     detail,
