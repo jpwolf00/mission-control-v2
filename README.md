@@ -85,11 +85,34 @@ SLACK_WEBHOOK_URL=""  # Optional
 
 ## Documentation
 
+- **[Quick Start](docs/DEVELOPER_GUIDE.md#quick-start)** - Get running in 5 minutes
+- **[Developer Guide](docs/DEVELOPER_GUIDE.md)** - Architecture, workflow, API development
+- **[User Guide](docs/USER_GUIDE.md)** - Using Mission Control (stories, gates, deployments)
+- **[Architecture](docs/ARCHITECTURE.md)** - Clean architecture principles
+- **[Deployment](docs/DEPLOYMENT.md)** - Dev/QA/Prod environments
+- **[Deployment Testing](docs/DEPLOYMENT_TESTING.md)** - Validation procedures
 - [Requirements](docs/MISSION_CONTROL_2_0_REQUIREMENTS.md)
-- [Architecture](docs/MISSION_CONTROL_2_0_DECOMPOSITION_DRAFT.md)
-- [Material UI Scaffold](docs/MC2_MATERIAL_UI_SCAFFOLD.md)
 - [API Contract](docs/API_CONTRACT.md)
 - [DB Schema](docs/DB_SCHEMA_V1.md)
+
+## Quick Reference
+
+```bash
+# Setup
+./scripts/setup.sh
+
+# Dev
+docker compose up -d db && npm run dev
+
+# Test all environments
+./scripts/exercise-environments.sh
+
+# Deploy production (MANUAL)
+./scripts/deploy-production.sh
+
+# API smoke tests
+./scripts/test-api.sh
+```
 
 ## Model Routing (Current)
 
