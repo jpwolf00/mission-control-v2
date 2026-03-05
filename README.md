@@ -27,6 +27,7 @@ npm run report:slo:weekly
 - **Deterministic Workflows**: Explicit state machine with strict gate transitions
 - **Quality by Design**: No gate closes without required evidence
 - **Safe Deployment**: Operator-gated production promotion with instant rollback
+- **Agent RBAC**: Role-based access control for independent AI agents
 - **Full Observability**: Structured logging, metrics, and health checks
 
 ### Gate Pipeline
@@ -34,6 +35,19 @@ npm run report:slo:weekly
 architect → implementer → reviewer-a → operator → reviewer-b
    (design)    (build)       (QA)      (deploy)   (validate)
 ```
+
+### Agent System
+MC2 uses independent AI agents with strict role-based permissions:
+
+| Role | Purpose | Allowed Tools |
+|------|---------|---------------|
+| **Architect** | Design & spec | read, write(docs), web_search |
+| **Implementer** | Code & tests | read, write(src), edit, exec(test) |
+| **Reviewer-A** | QA validation | read, exec(test), browser |
+| **Operator** | Deployment | read, exec(deploy) |
+| **Reviewer-B** | Prod validation | read, browser, exec(health) |
+
+See [Agent System Overview](docs/AGENT_SYSTEM_OVERVIEW.md) for details.
 
 ### Tech Stack
 - **Framework**: Next.js 16 + React 19
@@ -88,6 +102,8 @@ SLACK_WEBHOOK_URL=""  # Optional
 - **[Quick Start](docs/DEVELOPER_GUIDE.md#quick-start)** - Get running in 5 minutes
 - **[Developer Guide](docs/DEVELOPER_GUIDE.md)** - Architecture, workflow, API development
 - **[User Guide](docs/USER_GUIDE.md)** - Using Mission Control (stories, gates, deployments)
+- **[Agent System](docs/AGENT_SYSTEM_OVERVIEW.md)** - Agent personas, permissions, RBAC
+- **[Agent Roles](docs/AGENT_ROLES.md)** - Detailed role definitions and permissions matrix
 - **[Architecture](docs/ARCHITECTURE.md)** - Clean architecture principles
 - **[Deployment](docs/DEPLOYMENT.md)** - Dev/QA/Prod environments
 - **[Deployment Testing](docs/DEPLOYMENT_TESTING.md)** - Validation procedures
