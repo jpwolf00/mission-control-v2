@@ -52,7 +52,6 @@ export function dispatchStory(
   }
 
   // Acquire lock
-  const sessionId = uuidv4();
   const lockResult = acquireLock(storyId, gate, sessionId);
   if (!lockResult.success) {
     return {
@@ -63,7 +62,6 @@ export function dispatchStory(
   }
 
   // Create session
-  const sessionId = uuidv4();
   activeSessions.set(sessionId, {
     storyId,
     gate,
