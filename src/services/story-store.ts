@@ -59,3 +59,31 @@ class StoryStoreImpl {
  * Global story store instance
  */
 export const storyStore = new StoryStoreImpl();
+
+/**
+ * Get a story by ID (convenience function)
+ */
+export function getStoryById(id: string): Story | undefined {
+  return storyStore.get(id);
+}
+
+/**
+ * Get all stories (convenience function)
+ */
+export function getStories(): Story[] {
+  return storyStore.getAll();
+}
+
+/**
+ * Create or update a story (convenience function)
+ */
+export function saveStory(story: Story): void {
+  storyStore.set(story);
+}
+
+/**
+ * Delete a story by ID (convenience function)
+ */
+export function deleteStory(id: string): boolean {
+  return storyStore.delete(id);
+}
