@@ -195,7 +195,7 @@ export function releaseLock(
   storyId: string,
   gate: Gate,
   sessionId: string,
-  reason?: string
+  reason?: "released" | "superseded" | undefined
 ): LockReleaseResult {
   return lockService.release(storyId, gate, sessionId, reason);
 }
