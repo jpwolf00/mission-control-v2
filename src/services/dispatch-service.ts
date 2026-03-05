@@ -1,6 +1,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import { getStoryById } from './story-store';
 import { acquireLock, releaseLock } from './lock-service';
+import { Gate } from '@/domain/workflow-types';
 
 interface DispatchResult {
   success: boolean;
@@ -52,7 +53,8 @@ export function dispatchStory(
   }
 
   // Acquire lock
-  const lockResult = acquireLock(storyId, gate, sessionId);
+  const gateTyped = gate as Gate;
+  const lockResult = acquireLock(storyId, gateTyped, sessionId);
   if (!lockResult.success) {
     return {
       success: false,
