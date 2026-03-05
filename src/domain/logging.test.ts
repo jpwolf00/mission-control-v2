@@ -140,7 +140,8 @@ test("validateLogEntry rejects invalid timestamps", () => {
     message: "Test"
   };
   assert.equal(validateLogEntry(entry).valid, false);
-  assert.ok(validateLogEntry(entry).error.includes("timestamp"));
+  const result = validateLogEntry(entry);
+  assert.ok(result.valid === false && "error" in result && (result as { error: string }).error.includes("timestamp"));
 });
 
 test("validateLogEntry rejects non-serializable metadata", () => {
