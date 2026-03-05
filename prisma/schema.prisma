@@ -89,14 +89,30 @@ model DispatchLock {
   storyId   String   @map("story_id")
   gate      String
   sessionId String   @map("session_id")
-  
+
   lockedAt    DateTime @default(now()) @map("locked_at")
   expiresAt   DateTime @map("expires_at")
   releasedAt  DateTime? @map("released_at")
   releaseReason String? @map("release_reason")
-  
+
   story     Story    @relation(fields: [storyId], references: [id], onDelete: Cascade)
-  
+
   @@map("dispatch_locks")
   @@index([storyId, gate])
+}
+
+model AgentSession {
+  id        String   @id @default(uuid())
+  storyId   String   @map("story_id")
+  gate      String
+  agentId  String   @map("agent_id")
+  role     String
+  status   String   @default("active")
+  startedAt DateTime @default(now()) @map("started_at")
+  endedAt   DateTime? @map("ended_at")
+  lastHeartbeatAt DateTime? @map("last_heartbeat_at")
+  metadata  Json?
+
+  @@map("agent_sessions")
+  @@index([storyId])
 }
