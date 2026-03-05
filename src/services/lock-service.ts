@@ -170,3 +170,32 @@ export class LockService {
     return cleaned;
   }
 }
+
+// Singleton instance for use across the application
+const lockService = new LockService();
+
+/**
+ * Acquire a lock on a story+gate combination.
+ * Wrapper around LockService.acquire for convenience.
+ */
+export function acquireLock(
+  storyId: string,
+  gate: Gate,
+  sessionId: string,
+  ttlMs?: number
+): LockAcquireResult {
+  return lockService.acquire(storyId, gate, sessionId, ttlMs);
+}
+
+/**
+ * Release a lock on a story+gate combination.
+ * Wrapper around LockService.release for convenience.
+ */
+export function releaseLock(
+  storyId: string,
+  gate: Gate,
+  sessionId: string,
+  reason?: string
+): LockReleaseResult {
+  return lockService.release(storyId, gate, sessionId, reason);
+}
