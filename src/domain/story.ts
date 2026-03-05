@@ -3,7 +3,7 @@
 
 import { isUuid, version } from "./utils/uuid.js";
 
-export const STORY_STATUSES = ["draft", "pending_approval", "approved", "active", "completed", "archived"] as const;
+export const STORY_STATUSES = ["draft", "pending_approval", "approved", "active", "completed", "archived", "blocked"] as const;
 export type StoryStatus = (typeof STORY_STATUSES)[number];
 
 /**
