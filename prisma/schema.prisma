@@ -1,0 +1,102 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Story {
+  id          String   @id @default(uuid())
+  title       String
+  description String?
+  status      String   @default("draft")
+  priority    String?
+  config      Json     @default("{}")
+  
+  // Metadata
+  requirementsArtifactId    String?
+  approvedRequirementsArtifact Boolean @default(false)
+  acceptanceCriteria        String[]
+  
+  // Relations
+  gates       StoryGate[]
+  sessions    RunSession[]
+  events      StoryEvent[]
+  locks       DispatchLock[]
+  
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("stories")
+}
+
+model StoryGate {
+  id        String   @id @default(uuid())
+  storyId   String   @map("story_id")
+  gate      String
+  status    String   @default("pending")
+  evidence  Json?
+  completedAt DateTime? @map("completed_at")
+  completedBy String?   @map("completed_by")
+  
+  story     Story    @relation(fields: [storyId], references: [id], onDelete: Cascade)
+  
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("story_gates")
+  @@index([storyId])
+}
+
+model RunSession {
+  id        String   @id @default(uuid())
+  storyId   String   @map("story_id")
+  gate      String
+  status    String   @default("pending")
+  
+  // Session tracking
+  startedAt DateTime? @map("started_at")
+  endedAt   DateTime? @map("ended_at")
+  lastHeartbeatAt DateTime? @map("last_heartbeat_at")
+  
+  metadata  Json?
+  
+  story     Story    @relation(fields: [storyId], references: [id], onDelete: Cascade)
+  
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("run_sessions")
+  @@index([storyId])
+}
+
+model StoryEvent {
+  id        String   @id @default(uuid())
+  storyId   String   @map("story_id")
+  eventType String   @map("event_type")
+  payload   Json?
+  
+  story     Story    @relation(fields: [storyId], references: [id], onDelete: Cascade)
+  
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("story_events")
+  @@index([storyId])
+}
+
+model DispatchLock {
+  id        String   @id @default(uuid())
+  storyId   String   @map("story_id")
+  gate      String
+  sessionId String   @map("session_id")
+  
+  lockedAt    DateTime @default(now()) @map("locked_at")
+  expiresAt   DateTime @map("expires_at")
+  releasedAt  DateTime? @map("released_at")
+  releaseReason String? @map("release_reason")
+  
+  story     Story    @relation(fields: [storyId], references: [id], onDelete: Cascade)
+  
+  @@map("dispatch_locks")
+  @@index([storyId, gate])
+}
