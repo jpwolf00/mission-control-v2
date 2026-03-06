@@ -6,6 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { GateTimeline } from '@/components/gate-timeline';
+import { PageLoader } from '@/components/loading';
+import { ErrorMessage } from '@/components/error-message';
 import { Story } from '@/domain/story';
 
 export default function StoryDetailPage() {
@@ -13,39 +15,41 @@ export default function StoryDetailPage() {
   const storyId = params.id as string;
   const [story, setStory] = useState<Story | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchStory = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await fetch(`/api/v1/stories/${storyId}`);
+      if (!response.ok) {
+        if (response.status === 404) throw new Error('Story not found');
+        throw new Error('Failed to fetch story');
+      }
+      const data = await response.json();
+      setStory(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unknown error');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    // Mock data - replace with API call
-    const mockStory: Story = {
-      id: storyId,
-      status: 'active',
-      metadata: {
-        title: 'Implement user authentication',
-        description: 'Add OAuth2 authentication flow with Google and GitHub providers',
-        requirementsArtifactId: 'req-auth-001',
-        approvedRequirementsArtifact: true,
-        acceptanceCriteria: [
-          'User can login with Google',
-          'User can login with GitHub',
-          'Session persists across page reloads',
-        ],
-        priority: 'high',
-      },
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-    setStory(mockStory);
-    setLoading(false);
+    fetchStory();
   }, [storyId]);
 
-  if (loading) return <div>Loading...</div>;
-  if (!story) return <div>Story not found</div>;
+  if (loading) return <PageLoader />;
+  if (error) return <ErrorMessage message={error} onRetry={fetchStory} />;
+  if (!story) return <ErrorMessage message="Story not found" />;
 
   const statusColors: Record<string, string> = {
     draft: 'bg-gray-100',
+    pending_approval: 'bg-yellow-100',
     approved: 'bg-blue-100',
     active: 'bg-green-100',
     completed: 'bg-purple-100',
+    blocked: 'bg-red-100',
     archived: 'bg-gray-100',
   };
 
@@ -56,8 +60,10 @@ export default function StoryDetailPage() {
           <h1 className="text-2xl font-bold">{story.metadata.title}</h1>
           <p className="text-muted-foreground mt-1">{story.metadata.description}</p>
           <div className="flex gap-2 mt-3">
-            <Badge className={statusColors[story.status]}>{story.status}</Badge>
-            <Badge variant="outline">{story.metadata.priority?.toUpperCase()}</Badge>
+            <Badge className={statusColors[story.status] || 'bg-gray-100'}>{story.status}</Badge>
+            {story.metadata.priority && (
+              <Badge variant="outline">{story.metadata.priority.toUpperCase()}</Badge>
+            )}
           </div>
         </div>
         <div className="flex gap-2">
@@ -89,36 +95,44 @@ export default function StoryDetailPage() {
             <CardTitle>Acceptance Criteria</CardTitle>
           </CardHeader>
           <CardContent>
-            <ul className="space-y-2">
-              {story.metadata.acceptanceCriteria?.map((criteria, i) => (
-                <li key={i} className="flex items-center gap-2">
-                  <input type="checkbox" className="rounded" />
-                  <span>{criteria}</span>
-                </li>
-              ))}
-            </ul>
+            {story.metadata.acceptanceCriteria && story.metadata.acceptanceCriteria.length > 0 ? (
+              <ul className="space-y-2">
+                {story.metadata.acceptanceCriteria.map((criteria, i) => (
+                  <li key={i} className="flex items-center gap-2">
+                    <input type="checkbox" className="rounded" readOnly />
+                    <span>{criteria}</span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-sm text-muted-foreground">No acceptance criteria defined</p>
+            )}
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader>
-            <CardTitle>Activity Log</CardTitle>
+            <CardTitle>Details</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3 text-sm">
+            <dl className="space-y-3 text-sm">
               <div className="flex justify-between">
-                <span>Story created</span>
-                <span className="text-muted-foreground">2h ago</span>
+                <dt className="text-muted-foreground">Story ID</dt>
+                <dd className="font-mono text-xs">{story.id}</dd>
               </div>
               <div className="flex justify-between">
-                <span>Requirements approved</span>
-                <span className="text-muted-foreground">1h ago</span>
+                <dt className="text-muted-foreground">Requirements Approved</dt>
+                <dd>{story.metadata.approvedRequirementsArtifact ? 'Yes' : 'No'}</dd>
               </div>
               <div className="flex justify-between">
-                <span>Dispatched to architect</span>
-                <span className="text-muted-foreground">30m ago</span>
+                <dt className="text-muted-foreground">Created</dt>
+                <dd>{new Date(story.createdAt).toLocaleDateString()}</dd>
               </div>
-            </div>
+              <div className="flex justify-between">
+                <dt className="text-muted-foreground">Updated</dt>
+                <dd>{new Date(story.updatedAt).toLocaleDateString()}</dd>
+              </div>
+            </dl>
           </CardContent>
         </Card>
       </div>

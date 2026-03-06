@@ -1,7 +1,7 @@
 // Stalled derivation detection using explicit timestamps
 // MC2-E4-S1: Stalled derivation logic with configurable timeout threshold (no timers)
 
-import { getSession, type SessionRecord } from "./session-tracker.js";
+import { getSession, getAllSessions, type SessionRecord } from "@/domain/session-tracker";
 
 export interface StalledDerivationConfig {
   timeoutThresholdMs: number;  // Configurable timeout threshold
@@ -109,8 +109,7 @@ export function checkAllStalled(
  * Get all active sessions (helper for checking all)
  */
 function getAllActiveSessions(): SessionRecord[] {
-  const { getAllSessions } = require("./session-tracker.js");
-  const all = getAllSessions() as SessionRecord[];
+  const all = getAllSessions();
   return all.filter((s: SessionRecord) => s.status === "active");
 }
 

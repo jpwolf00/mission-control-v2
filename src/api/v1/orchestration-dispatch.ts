@@ -1,12 +1,12 @@
-import type { Gate } from "../../domain/workflow-types.js";
-import { storyStore } from "../../services/story-store.js";
-import { LockService } from "../../services/lock-service.js";
-import { requireIdempotencyKey, type IdempotencyResult } from "./idempotency.js";
-import { 
-  validateDispatchPreconditions, 
-  type Story 
-} from "../../domain/story.js";
-import type { LockAcquireResult } from "../../domain/dispatch-lock.js";
+import type { Gate } from "@/domain/workflow-types";
+import { getStoryByIdFromDB } from "@/services/story-store-db";
+import { acquireLock } from "@/services/lock-service";
+import { requireIdempotencyKey, type IdempotencyResult } from "@/api/v1/idempotency";
+import {
+  validateDispatchPreconditions,
+  type Story
+} from "@/domain/story";
+import type { LockAcquireResult } from "@/domain/dispatch-lock";
 
 /**
  * Input for the dispatch story handler
@@ -63,16 +63,16 @@ function createDispatchStatus(
 
 /**
  * Main dispatch handler for story orchestration.
- * 
+ *
  * Validates:
  * 1. Idempotency key is present
- * 2. Story exists in store
+ * 2. Story exists in database
  * 3. Dispatch preconditions are met
- * 4. Lock can be acquired
- * 
+ * 4. Lock can be acquired (uses singleton lock service)
+ *
  * Returns deterministic status object on success.
  */
-export function dispatchStoryHandler(input: DispatchInput): DispatchResult {
+export async function dispatchStoryHandler(input: DispatchInput): Promise<DispatchResult> {
   const { storyId, gate, sessionId, headers } = input;
 
   // Step 1: Validate idempotency key
@@ -87,8 +87,8 @@ export function dispatchStoryHandler(input: DispatchInput): DispatchResult {
 
   const idempotencyKey = idempotencyResult.key!;
 
-  // Step 2: Validate story exists in store
-  const story = storyStore.get(storyId);
+  // Step 2: Validate story exists in database
+  const story = await getStoryByIdFromDB(storyId);
   if (!story) {
     return {
       ok: false,
@@ -107,9 +107,8 @@ export function dispatchStoryHandler(input: DispatchInput): DispatchResult {
     };
   }
 
-  // Step 4: Acquire lock via lock-service
-  const lockService = new LockService();
-  const lockResult = lockService.acquire(storyId, gate, sessionId);
+  // Step 4: Acquire lock via singleton lock service
+  const lockResult = acquireLock(storyId, gate, sessionId);
 
   if (!lockResult.ok) {
     return {
@@ -133,11 +132,11 @@ export function dispatchStoryHandler(input: DispatchInput): DispatchResult {
  */
 export function getDispatchStatus(result: DispatchResult): DispatchStatus | null {
   if (!result.ok) return null;
-  
+
   // TypeScript narrowing - result.lock exists only when ok is true
   const lockResult = result.lock;
   if (!lockResult.ok) return null;
-  
+
   return createDispatchStatus(
     result.story.id,
     ((result.story.status as { gate?: string }).gate || "architect") as Gate,

@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const result = dispatchStory(storyId, gate, idempotencyCheck.key!);
+    const result = await dispatchStory(storyId, gate, idempotencyCheck.key!);
 
     if (!result.success) {
       return NextResponse.json(

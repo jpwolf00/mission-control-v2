@@ -1,7 +1,7 @@
-import { GATES, type Gate, type StoryStatus, type TransitionAction } from "./workflow-types.js";
+import { GATES, type Gate, type WorkflowStatus, type TransitionAction } from "@/domain/workflow-types";
 
 export type TransitionResult =
-  | { ok: true; next: StoryStatus }
+  | { ok: true; next: WorkflowStatus }
   | { ok: false; error: string };
 
 function nextGate(gate: Gate): Gate | null {
@@ -12,7 +12,7 @@ function nextGate(gate: Gate): Gate | null {
   return GATES[idx + 1];
 }
 
-export function transition(current: StoryStatus, action: TransitionAction): TransitionResult {
+export function transition(current: WorkflowStatus, action: TransitionAction): TransitionResult {
   switch (action.type) {
     case "dispatch": {
       if (current.state !== "created") {

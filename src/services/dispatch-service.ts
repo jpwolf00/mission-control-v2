@@ -1,7 +1,8 @@
 import { v4 as uuidv4 } from 'uuid';
-import { getStoryById } from './story-store';
+import { getStoryByIdFromDB } from './story-store-db';
 import { acquireLock, releaseLock } from './lock-service';
 import { Gate } from '@/domain/workflow-types';
+import { triggerAgent, gateToRole } from './openclaw-client';
 
 interface DispatchResult {
   success: boolean;
@@ -17,11 +18,11 @@ const activeSessions = new Map<string, {
   idempotencyKey: string;
 }>();
 
-export function dispatchStory(
+export async function dispatchStory(
   storyId: string,
   gate: string,
   idempotencyKey: string
-): DispatchResult {
+): Promise<DispatchResult> {
   // Check for existing session with same idempotency key
   for (const [sessionId, session] of activeSessions) {
     if (session.idempotencyKey === idempotencyKey) {
@@ -33,8 +34,8 @@ export function dispatchStory(
     }
   }
 
-  // Get story
-  const story = getStoryById(storyId);
+  // Get story from database
+  const story = await getStoryByIdFromDB(storyId);
   if (!story) {
     return {
       success: false,
@@ -70,6 +71,15 @@ export function dispatchStory(
     gate,
     startedAt: new Date(),
     idempotencyKey,
+  });
+
+  // Trigger Openclaw agent for this gate
+  await triggerAgent({
+    storyId,
+    gate: gateTyped,
+    sessionId,
+    role: gateToRole(gateTyped),
+    context: { story },
   });
 
   return {

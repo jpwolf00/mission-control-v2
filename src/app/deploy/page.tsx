@@ -1,104 +1,120 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { PageLoader } from '@/components/loading';
+import { ErrorMessage } from '@/components/error-message';
 
 interface Deployment {
   id: string;
-  version: string;
+  storyId: string;
+  featureBranch: string;
+  targetEnvironment: string;
   commitSha: string;
-  environment: 'qa' | 'prod';
-  status: 'success' | 'failed' | 'rolling_back';
-  deployedAt: string;
-  deployedBy: string;
+  commitMessage: string;
+  status: string;
+  initiatedBy: string;
+  createdAt?: string;
+  deployedAt?: string;
+  rolledBackAt?: string;
+  rollbackReason?: string;
 }
 
-const mockDeployments: Deployment[] = [
-  {
-    id: 'deploy-1',
-    version: 'v2.1.0',
-    commitSha: 'a1b2c3d',
-    environment: 'prod',
-    status: 'success',
-    deployedAt: '2026-03-05T10:00:00Z',
-    deployedBy: 'operator-agent',
-  },
-  {
-    id: 'deploy-2',
-    version: 'v2.1.1',
-    commitSha: 'e4f5g6h',
-    environment: 'qa',
-    status: 'success',
-    deployedAt: '2026-03-05T14:00:00Z',
-    deployedBy: 'operator-agent',
-  },
-  {
-    id: 'deploy-3',
-    version: 'v2.1.2',
-    commitSha: 'i7j8k9l',
-    environment: 'prod',
-    status: 'failed',
-    deployedAt: '2026-03-05T16:00:00Z',
-    deployedBy: 'operator-agent',
-  },
-];
+const statusColors: Record<string, string> = {
+  'pending-approval': 'bg-yellow-100 text-yellow-800',
+  approved: 'bg-blue-100 text-blue-800',
+  deploying: 'bg-purple-100 text-purple-800',
+  verifying: 'bg-indigo-100 text-indigo-800',
+  verified: 'bg-green-100 text-green-800',
+  failed: 'bg-red-100 text-red-800',
+  'rolled-back': 'bg-orange-100 text-orange-800',
+};
 
 export default function DeployPage() {
-  const [selectedSha, setSelectedSha] = useState('');
-  const [targetEnv, setTargetEnv] = useState('prod');
+  const [deployments, setDeployments] = useState<Deployment[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [deploying, setDeploying] = useState(false);
 
-  const statusColors: Record<string, string> = {
-    success: 'bg-green-100 text-green-800',
-    failed: 'bg-red-100 text-red-800',
-    rolling_back: 'bg-yellow-100 text-yellow-800',
+  // Form state
+  const [storyId, setStoryId] = useState('');
+  const [featureBranch, setFeatureBranch] = useState('');
+  const [targetEnv, setTargetEnv] = useState('staging');
+  const [commitSha, setCommitSha] = useState('');
+  const [commitMessage, setCommitMessage] = useState('');
+
+  const fetchDeployments = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await fetch('/api/v1/deployments');
+      if (!response.ok) throw new Error('Failed to fetch deployments');
+      const data = await response.json();
+      setDeployments(data.deployments || []);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unknown error');
+    } finally {
+      setLoading(false);
+    }
   };
+
+  useEffect(() => {
+    fetchDeployments();
+  }, []);
+
+  const handleDeploy = async () => {
+    if (!storyId || !featureBranch || !commitSha || !commitMessage) return;
+    setDeploying(true);
+    try {
+      const response = await fetch('/api/v1/deployments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          storyId,
+          featureBranch,
+          targetEnvironment: targetEnv,
+          commitSha,
+          commitMessage,
+          initiatedBy: 'operator',
+        }),
+      });
+      if (!response.ok) throw new Error('Failed to create deployment');
+      await fetchDeployments();
+      setStoryId('');
+      setFeatureBranch('');
+      setCommitSha('');
+      setCommitMessage('');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Deploy failed');
+    } finally {
+      setDeploying(false);
+    }
+  };
+
+  const handleAction = async (deploymentId: string, action: string, params: Record<string, string> = {}) => {
+    try {
+      const response = await fetch(`/api/v1/deployments/${deploymentId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action, ...params }),
+      });
+      if (!response.ok) throw new Error(`Failed to ${action} deployment`);
+      await fetchDeployments();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : `Action failed: ${action}`);
+    }
+  };
+
+  if (loading) return <PageLoader />;
+  if (error) return <ErrorMessage message={error} onRetry={fetchDeployments} />;
 
   return (
     <div className="p-6 space-y-6">
       <div>
         <h1 className="text-2xl font-bold">Deploy & Rollback</h1>
         <p className="text-muted-foreground">Manage deployments across environments</p>
-      </div>
-
-      <div className="grid grid-cols-3 gap-4">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-sm">Production</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">v2.1.0</div>
-            <Badge className="bg-green-100 text-green-800 mt-2">Healthy</Badge>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-sm">QA</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">v2.1.2</div>
-            <Badge className="bg-green-100 text-green-800 mt-2">Healthy</Badge>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-sm">Dev</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">Latest</div>
-            <Badge className="bg-blue-100 text-blue-800 mt-2">Active</Badge>
-          </CardContent>
-        </Card>
       </div>
 
       <Card>
@@ -108,33 +124,63 @@ export default function DeployPage() {
         <CardContent className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium">Target Environment</label>
-              <Select value={targetEnv} onValueChange={setTargetEnv}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="qa">QA</SelectItem>
-                  <SelectItem value="prod">Production</SelectItem>
-                </SelectContent>
-              </Select>
+              <label className="text-sm font-medium">Story ID</label>
+              <input
+                type="text"
+                value={storyId}
+                onChange={(e) => setStoryId(e.target.value)}
+                placeholder="story_xxx"
+                className="w-full px-3 py-2 border rounded-md text-sm"
+              />
             </div>
-            
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Feature Branch</label>
+              <input
+                type="text"
+                value={featureBranch}
+                onChange={(e) => setFeatureBranch(e.target.value)}
+                placeholder="feat/my-feature"
+                className="w-full px-3 py-2 border rounded-md text-sm"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Environment</label>
+              <select
+                value={targetEnv}
+                onChange={(e) => setTargetEnv(e.target.value)}
+                className="w-full px-3 py-2 border rounded-md text-sm"
+              >
+                <option value="staging">Staging</option>
+                <option value="production">Production</option>
+              </select>
+            </div>
             <div className="space-y-2">
               <label className="text-sm font-medium">Commit SHA</label>
-              <Select value={selectedSha} onValueChange={setSelectedSha}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select commit" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="i7j8k9l">i7j8k9l - feat: auth flow</SelectItem>
-                  <SelectItem value="m0n1o2p">m0n1o2p - fix: session bug</SelectItem>
-                </SelectContent>
-              </Select>
+              <input
+                type="text"
+                value={commitSha}
+                onChange={(e) => setCommitSha(e.target.value)}
+                placeholder="abc123"
+                className="w-full px-3 py-2 border rounded-md text-sm"
+              />
             </div>
           </div>
-          
-          <Button disabled={!selectedSha}>Deploy to {targetEnv.toUpperCase()}</Button>
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Commit Message</label>
+            <input
+              type="text"
+              value={commitMessage}
+              onChange={(e) => setCommitMessage(e.target.value)}
+              placeholder="feat: add new feature"
+              className="w-full px-3 py-2 border rounded-md text-sm"
+            />
+          </div>
+          <Button
+            onClick={handleDeploy}
+            disabled={deploying || !storyId || !featureBranch || !commitSha || !commitMessage}
+          >
+            {deploying ? 'Deploying...' : `Deploy to ${targetEnv}`}
+          </Button>
         </CardContent>
       </Card>
 
@@ -143,29 +189,68 @@ export default function DeployPage() {
           <CardTitle>Deployment History</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-3">
-            {mockDeployments.map((deploy) => (
-              <div
-                key={deploy.id}
-                className="flex justify-between items-center p-3 border rounded-lg"
-              >
-                <div className="space-y-1">
-                  <div className="font-medium">{deploy.version}</div>
-                  <div className="text-sm text-muted-foreground">
-                    {deploy.commitSha} • {deploy.environment}
+          {deployments.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-6">No deployments yet</p>
+          ) : (
+            <div className="space-y-3">
+              {deployments.map((deploy) => (
+                <div
+                  key={deploy.id}
+                  className="flex justify-between items-center p-3 border rounded-lg"
+                >
+                  <div className="space-y-1">
+                    <div className="font-medium text-sm">{deploy.commitMessage}</div>
+                    <div className="text-xs text-muted-foreground">
+                      {deploy.commitSha.slice(0, 7)} &bull; {deploy.targetEnvironment} &bull; {deploy.featureBranch}
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <Badge className={statusColors[deploy.status] || 'bg-gray-100'}>
+                      {deploy.status}
+                    </Badge>
+
+                    {deploy.status === 'pending-approval' && (
+                      <Button
+                        size="sm"
+                        onClick={() => handleAction(deploy.id, 'approve', {
+                          approverId: 'operator',
+                          approverRole: 'operator',
+                        })}
+                      >
+                        Approve
+                      </Button>
+                    )}
+
+                    {deploy.status === 'approved' && (
+                      <Button
+                        size="sm"
+                        onClick={() => handleAction(deploy.id, 'start', {
+                          startedBy: 'operator',
+                        })}
+                      >
+                        Start Deploy
+                      </Button>
+                    )}
+
+                    {(deploy.status === 'verified' || deploy.status === 'failed') && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleAction(deploy.id, 'rollback', {
+                          requestedBy: 'operator',
+                          targetSha: 'previous',
+                          reason: 'Manual rollback',
+                        })}
+                      >
+                        Rollback
+                      </Button>
+                    )}
                   </div>
                 </div>
-                
-                <div className="flex items-center gap-3">
-                  <Badge className={statusColors[deploy.status]}>{deploy.status}</Badge>
-                  
-                  {deploy.status === 'failed' && (
-                    <Button size="sm" variant="outline">Rollback</Button>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

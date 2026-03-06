@@ -1,7 +1,7 @@
 // Story domain types and validation
 // MC2-E1-S1: Story type definition with required metadata rules
 
-import { isUuid, version } from "./utils/uuid.js";
+import { isUuid, version } from "@/domain/utils/uuid";
 
 export const STORY_STATUSES = ["draft", "pending_approval", "approved", "active", "completed", "archived", "blocked"] as const;
 export type StoryStatus = (typeof STORY_STATUSES)[number];

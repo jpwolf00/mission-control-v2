@@ -1,6 +1,10 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // output: 'standalone' - causes static file issues
+  async redirects() {
+    return [
+      { source: '/kanban', destination: '/stories', permanent: true },
+    ];
+  },
 }
 
 module.exports = nextConfig

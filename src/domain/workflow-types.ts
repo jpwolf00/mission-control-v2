@@ -20,7 +20,7 @@ export const STORY_STATES = [
 
 export type StoryState = (typeof STORY_STATES)[number];
 
-export type StoryStatus = {
+export type WorkflowStatus = {
   state: StoryState;
   gate?: Gate;
 };

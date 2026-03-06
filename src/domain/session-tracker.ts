@@ -1,7 +1,7 @@
 // Session lifecycle tracker
 // MC2-E4-S1: Session tracking with id, storyId, createdAt, lastHeartbeatAt, expiresAt, status
 
-import { RUNTIME_EVENTS, type RuntimeEventType } from "./runtime-types.js";
+import { RUNTIME_EVENTS, type RuntimeEventType } from "@/domain/runtime-types";
 
 export type SessionStatus = 
   | "pending"

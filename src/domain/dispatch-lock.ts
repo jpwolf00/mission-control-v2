@@ -1,4 +1,4 @@
-import type { Gate } from "./workflow-types.js";
+import type { Gate } from "@/domain/workflow-types";
 
 /**
  * DispatchLock represents a temporary exclusive lock on a story+gate combination.

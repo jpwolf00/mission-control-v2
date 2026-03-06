@@ -1,10 +1,10 @@
 // Gate completion schema and evidence validators
 // MC2-E6-S1: Gate completion schema and evidence validators
 
-import { Gate, GATES } from "./workflow-types.js";
+import { Gate, GATES } from "@/domain/workflow-types";
 
 // Re-export Gate for convenience
-export type { Gate } from './workflow-types';
+export type { Gate } from "@/domain/workflow-types";
 export { GATES };
 
 // Gate completion status types
