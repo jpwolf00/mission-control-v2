@@ -24,9 +24,14 @@ export async function POST(request: NextRequest) {
     const result = await dispatchStory(storyId, gate, idempotencyCheck.key!);
 
     if (!result.success) {
+      const status =
+        result.code === 'CONFLICT' ? 409 :
+        result.code === 'GATEWAY_ERROR' ? 502 :
+        422;
+
       return NextResponse.json(
         { error: result.error, code: result.code },
-        { status: result.code === 'CONFLICT' ? 409 : 422 }
+        { status }
       );
     }
 

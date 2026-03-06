@@ -74,13 +74,25 @@ export async function dispatchStory(
   });
 
   // Trigger Openclaw agent for this gate
-  await triggerAgent({
+  const triggerResult = await triggerAgent({
     storyId,
     gate: gateTyped,
     sessionId,
     role: gateToRole(gateTyped),
     context: { story },
   });
+
+  if (!triggerResult.success) {
+    // Roll back lock + in-memory session so dispatch does not report false success
+    releaseLock(storyId, gateTyped, sessionId);
+    activeSessions.delete(sessionId);
+
+    return {
+      success: false,
+      error: triggerResult.error || 'Failed to trigger OpenClaw agent',
+      code: 'GATEWAY_ERROR',
+    };
+  }
 
   return {
     success: true,

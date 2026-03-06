@@ -92,7 +92,7 @@ You are the architect agent for Mission Control story "Add User Auth".
 ## Callback
 When finished, POST your results to: http://192.168.85.205:3004/api/v1/agents/callback
 Include headers: Content-Type: application/json, x-idempotency-key: <unique-key>
-Body: { "sessionId": "d7074fde-...", "event": "completed", "agentId": "<your-id>", "gate": "architect", "evidence": [...] }
+Body: { "sessionId": "d7074fde-...", "event": "completed", "agentId": "<your-id>", "role": "architect", "gate": "architect", "evidence": [...] }
 ```
 
 ---
@@ -236,4 +236,4 @@ curl -X POST http://192.168.85.206:18789/hooks/agent \
 | Agent instructions | Each workspace | Add IDENTITY.md with role scope and tool constraints |
 | Network access | Firewall/routing | Ensure gateway can reach `192.168.85.205:3004` for callbacks |
 
-**No changes needed on the MC2 side** — the dispatch pipeline and callback handler are already deployed and working.
+MC2 is largely ready, but recommended hardening is to fail dispatch when webhook trigger fails (to avoid false-positive "dispatched" states).

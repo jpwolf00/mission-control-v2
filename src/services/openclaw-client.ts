@@ -78,7 +78,7 @@ export async function triggerAgent(config: TriggerAgentConfig): Promise<TriggerR
     `## Callback`,
     `When finished, POST your results to: ${callbackUrl}`,
     `Include headers: Content-Type: application/json, x-idempotency-key: <unique-key>`,
-    `Body: { "sessionId": "${sessionId}", "event": "completed", "agentId": "<your-id>", "gate": "${gate}", "evidence": [...] }`,
+    `Body: { "sessionId": "${sessionId}", "event": "completed", "agentId": "<your-id>", "role": "${role}", "gate": "${gate}", "evidence": [...] }`,
   ].filter(Boolean).join('\n');
 
   try {
