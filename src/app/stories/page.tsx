@@ -2,11 +2,14 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import Button from '@mui/material/Button';
 import Typography from '@mui/material/Typography';
 import Paper from '@mui/material/Paper';
 import Chip from '@mui/material/Chip';
 import Box from '@mui/material/Box';
+import Alert from '@mui/material/Alert';
+import Snackbar from '@mui/material/Snackbar';
 import { StoryCard } from '@/components/story-card';
 import { PageLoader } from '@/components/loading';
 import { ErrorMessage } from '@/components/error-message';
@@ -21,11 +24,19 @@ const COLUMNS = [
   { key: 'completed', label: 'Completed' },
 ] as const;
 
+function generateIdempotencyKey(): string {
+  return `dispatch-${Date.now()}-${Math.random().toString(36).substring(2, 10)}`;
+}
+
 export default function StoriesPage() {
   const [stories, setStories] = useState<Story[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showArchived, setShowArchived] = useState(false);
+  const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({
+    open: false, message: '', severity: 'success',
+  });
+  const router = useRouter();
 
   const fetchStories = async () => {
     setLoading(true);
@@ -39,6 +50,29 @@ export default function StoriesPage() {
       setError(err instanceof Error ? err.message : 'Unknown error');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDispatch = async (story: Story) => {
+    const gate = story.currentGate || 'architect';
+    try {
+      const response = await fetch('/api/v1/orchestration/dispatch', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-idempotency-key': generateIdempotencyKey(),
+        },
+        body: JSON.stringify({ storyId: story.id, gate }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to dispatch story');
+      }
+      setSnackbar({ open: true, message: `Dispatched "${story.metadata.title}" to ${gate}`, severity: 'success' });
+      // Refetch to update board
+      await fetchStories();
+    } catch (err) {
+      setSnackbar({ open: true, message: err instanceof Error ? err.message : 'Dispatch failed', severity: 'error' });
     }
   };
 
@@ -85,7 +119,12 @@ export default function StoriesPage() {
             </Box>
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
               {storiesByStatus[key]?.map((story) => (
-                <StoryCard key={story.id} story={story} />
+                <StoryCard
+                  key={story.id}
+                  story={story}
+                  onClick={() => router.push(`/stories/${story.id}`)}
+                  onDispatch={story.status === 'approved' ? () => handleDispatch(story) : undefined}
+                />
               ))}
               {(!storiesByStatus[key] || storiesByStatus[key].length === 0) && (
                 <Typography variant="caption" color="text.secondary" textAlign="center" py={2}>
@@ -102,11 +141,22 @@ export default function StoriesPage() {
           <Typography variant="body2" fontWeight={600} mb={1.5}>Archived</Typography>
           <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 1.5 }}>
             {archivedStories.map((story) => (
-              <StoryCard key={story.id} story={story} />
+              <StoryCard key={story.id} story={story} onClick={() => router.push(`/stories/${story.id}`)} />
             ))}
           </Box>
         </Box>
       )}
+
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={4000}
+        onClose={() => setSnackbar((s) => ({ ...s, open: false }))}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert severity={snackbar.severity} variant="filled" onClose={() => setSnackbar((s) => ({ ...s, open: false }))}>
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 }

@@ -10,6 +10,8 @@ import Button from '@mui/material/Button';
 import Typography from '@mui/material/Typography';
 import Box from '@mui/material/Box';
 import Checkbox from '@mui/material/Checkbox';
+import Alert from '@mui/material/Alert';
+import CircularProgress from '@mui/material/CircularProgress';
 import { GateTimeline } from '@/components/gate-timeline';
 import { PageLoader } from '@/components/loading';
 import { ErrorMessage } from '@/components/error-message';
@@ -25,12 +27,19 @@ const statusChipColors: Record<string, { bg: string; color: string }> = {
   archived: { bg: '#f1f5f9', color: '#475569' },
 };
 
+function generateIdempotencyKey(): string {
+  return `dispatch-${Date.now()}-${Math.random().toString(36).substring(2, 10)}`;
+}
+
 export default function StoryDetailPage() {
   const params = useParams();
   const storyId = params.id as string;
   const [story, setStory] = useState<Story | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [dispatching, setDispatching] = useState(false);
+  const [dispatchError, setDispatchError] = useState<string | null>(null);
+  const [dispatchSuccess, setDispatchSuccess] = useState<string | null>(null);
 
   const fetchStory = async () => {
     setLoading(true);
@@ -50,6 +59,33 @@ export default function StoryDetailPage() {
     }
   };
 
+  const handleDispatch = async (gate: string) => {
+    setDispatching(true);
+    setDispatchError(null);
+    setDispatchSuccess(null);
+    try {
+      const response = await fetch('/api/v1/orchestration/dispatch', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-idempotency-key': generateIdempotencyKey(),
+        },
+        body: JSON.stringify({ storyId, gate }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to dispatch story');
+      }
+      setDispatchSuccess(`Dispatched to ${gate} — Session: ${data.sessionId}`);
+      // Refetch story to reflect new status
+      await fetchStory();
+    } catch (err) {
+      setDispatchError(err instanceof Error ? err.message : 'Failed to dispatch');
+    } finally {
+      setDispatching(false);
+    }
+  };
+
   useEffect(() => {
     fetchStory();
   }, [storyId]);
@@ -60,8 +96,22 @@ export default function StoryDetailPage() {
 
   const chipColors = statusChipColors[story.status] || statusChipColors.draft;
 
+  // Determine the next gate to dispatch to
+  const nextGate = story.currentGate || 'architect';
+
   return (
     <Box sx={{ p: 3 }}>
+      {dispatchError && (
+        <Alert severity="error" sx={{ mb: 2 }} onClose={() => setDispatchError(null)}>
+          {dispatchError}
+        </Alert>
+      )}
+      {dispatchSuccess && (
+        <Alert severity="success" sx={{ mb: 2 }} onClose={() => setDispatchSuccess(null)}>
+          {dispatchSuccess}
+        </Alert>
+      )}
+
       <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={3}>
         <Box>
           <Typography variant="h5" fontWeight="bold">{story.metadata.title}</Typography>
@@ -85,10 +135,14 @@ export default function StoryDetailPage() {
         </Box>
         <Box display="flex" gap={1}>
           {story.status === 'approved' && (
-            <Button variant="contained">Dispatch to Architect</Button>
-          )}
-          {story.status === 'active' && (
-            <Button variant="outlined">Pause</Button>
+            <Button
+              variant="contained"
+              disabled={dispatching}
+              onClick={() => handleDispatch(nextGate)}
+              startIcon={dispatching ? <CircularProgress size={16} color="inherit" /> : undefined}
+            >
+              {dispatching ? 'Dispatching...' : `Dispatch to ${nextGate.charAt(0).toUpperCase() + nextGate.slice(1)}`}
+            </Button>
           )}
         </Box>
       </Box>
