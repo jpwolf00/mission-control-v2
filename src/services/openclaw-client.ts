@@ -32,20 +32,17 @@ export function gateToRole(gate: Gate): string {
 }
 
 /**
- * Trigger an Openclaw agent for a specific gate.
+ * Trigger an OpenClaw agent for a specific gate via the webhook API.
  *
- * STUB: This is where the Openclaw API integration would go.
- * The actual implementation would:
- * 1. Build the agent system prompt from the role definition
- * 2. Configure allowed tools from the RBAC permissions
- * 3. Call the Openclaw API to spawn an agent session
- * 4. Return the agent ID for tracking
+ * Uses POST /hooks/agent to run an isolated agent turn.
+ * The agent receives story context in the message and runs asynchronously.
  *
- * The agent would receive:
- * - System prompt with role constraints
- * - Story context (title, description, acceptance criteria)
- * - Session ID for callbacks to POST /api/v1/agents/callback
- * - Tool permissions from role-permissions.ts
+ * Requires OpenClaw gateway config:
+ *   hooks.enabled: true
+ *   hooks.token: <OPENCLAW_GATEWAY_TOKEN>
+ *   hooks.allowedAgentIds: ["architect","implementer","reviewer-a","operator","reviewer-b"]
+ *
+ * Each gate role should map to an OpenClaw agent workspace with matching agentId.
  */
 export async function triggerAgent(config: TriggerAgentConfig): Promise<TriggerResult> {
   const { storyId, gate, sessionId, role, context } = config;
@@ -64,24 +61,38 @@ export async function triggerAgent(config: TriggerAgentConfig): Promise<TriggerR
     return { success: true, agentId: stubAgentId };
   }
 
+  const callbackUrl = `${process.env.APP_URL || 'http://localhost:3004'}/api/v1/agents/callback`;
+  const criteria = (context.story.metadata.acceptanceCriteria || []).join('\n- ');
+
+  // Build the agent message with full story context and callback instructions
+  const message = [
+    `You are the ${role} agent for Mission Control story "${context.story.metadata.title}".`,
+    ``,
+    `## Story Context`,
+    `- **Story ID**: ${storyId}`,
+    `- **Gate**: ${gate}`,
+    `- **Session ID**: ${sessionId}`,
+    `- **Description**: ${context.story.metadata.description}`,
+    criteria ? `- **Acceptance Criteria**:\n- ${criteria}` : '',
+    ``,
+    `## Callback`,
+    `When finished, POST your results to: ${callbackUrl}`,
+    `Include headers: Content-Type: application/json, x-idempotency-key: <unique-key>`,
+    `Body: { "sessionId": "${sessionId}", "event": "completed", "agentId": "<your-id>", "gate": "${gate}", "evidence": [...] }`,
+  ].filter(Boolean).join('\n');
+
   try {
-    const response = await fetch(`${gatewayUrl}/agents/spawn`, {
+    const response = await fetch(`${gatewayUrl}/hooks/agent`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${gatewayToken}`,
+        'x-openclaw-token': gatewayToken,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        role,
-        sessionId,
-        callbackUrl: `${process.env.APP_URL || 'http://localhost:3004'}/api/v1/agents/callback`,
-        context: {
-          storyId,
-          gate,
-          title: context.story.metadata.title,
-          description: context.story.metadata.description,
-          acceptanceCriteria: context.story.metadata.acceptanceCriteria,
-        },
+        message,
+        name: `MC2-${role}`,
+        agentId: role,
+        deliver: false,
       }),
     });
 
@@ -91,9 +102,8 @@ export async function triggerAgent(config: TriggerAgentConfig): Promise<TriggerR
       return { success: false, error: `Gateway returned ${response.status}` };
     }
 
-    const data = await response.json();
-    console.log(`[openclaw]   Agent spawned: ${data.agentId || 'unknown'}`);
-    return { success: true, agentId: data.agentId };
+    console.log(`[openclaw]   Agent triggered via /hooks/agent for role "${role}"`);
+    return { success: true, agentId: `agent-${role}-${sessionId.slice(0, 8)}` };
   } catch (error) {
     console.error(`[openclaw]   Failed to reach gateway:`, error);
     return { success: false, error: String(error) };
