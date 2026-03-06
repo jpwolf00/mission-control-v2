@@ -1,41 +1,49 @@
+'use client';
+
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import AppBar from '@mui/material/AppBar';
+import Toolbar from '@mui/material/Toolbar';
+import Typography from '@mui/material/Typography';
+import Button from '@mui/material/Button';
+import Box from '@mui/material/Box';
 import { Rocket, LayoutDashboard, Kanban, GitBranch } from 'lucide-react';
 
+const navItems = [
+  { href: '/', label: 'Dashboard', icon: LayoutDashboard },
+  { href: '/stories', label: 'Dev Board', icon: Kanban },
+  { href: '/deploy', label: 'Deploy', icon: GitBranch },
+];
+
 export function Navigation() {
+  const pathname = usePathname();
+
   return (
-    <nav className="border-b bg-background">
-      <div className="flex h-16 items-center px-6">
-        <Link href="/" className="flex items-center gap-2 font-bold text-xl">
-          <Rocket className="h-6 w-6" />
-          <span>Mission Control</span>
+    <AppBar position="static" elevation={0}>
+      <Toolbar>
+        <Link href="/" style={{ textDecoration: 'none', color: 'inherit', display: 'flex', alignItems: 'center', gap: 8 }}>
+          <Rocket size={24} />
+          <Typography variant="h6" fontWeight="bold" component="span">
+            Mission Control
+          </Typography>
         </Link>
-
-        <div className="ml-auto flex items-center gap-6">
-          <Link
-            href="/"
-            className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground"
+        <Box sx={{ flexGrow: 1 }} />
+        {navItems.map(({ href, label, icon: Icon }) => (
+          <Button
+            key={href}
+            component={Link}
+            href={href}
+            startIcon={<Icon size={16} />}
+            sx={{
+              color: pathname === href ? 'primary.main' : 'text.secondary',
+              fontWeight: pathname === href ? 600 : 400,
+              '&:hover': { color: 'text.primary' },
+            }}
           >
-            <LayoutDashboard className="h-4 w-4" />
-            Dashboard
-          </Link>
-
-          <Link
-            href="/stories"
-            className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground"
-          >
-            <Kanban className="h-4 w-4" />
-            Dev Board
-          </Link>
-
-          <Link
-            href="/deploy"
-            className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground"
-          >
-            <GitBranch className="h-4 w-4" />
-            Deploy
-          </Link>
-        </div>
-      </div>
-    </nav>
+            {label}
+          </Button>
+        ))}
+      </Toolbar>
+    </AppBar>
   );
 }

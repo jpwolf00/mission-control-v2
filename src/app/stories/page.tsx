@@ -2,8 +2,12 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Button from '@mui/material/Button';
+import Typography from '@mui/material/Typography';
+import Paper from '@mui/material/Paper';
+import Chip from '@mui/material/Chip';
+import Box from '@mui/material/Box';
 import { StoryCard } from '@/components/story-card';
-import { Button } from '@/components/ui/button';
 import { PageLoader } from '@/components/loading';
 import { ErrorMessage } from '@/components/error-message';
 import { Story } from '@/domain/story';
@@ -52,63 +56,57 @@ export default function StoriesPage() {
   const archivedStories = stories.filter((s) => s.status === 'archived');
 
   return (
-    <div className="p-6">
-      <div className="mb-6 flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">Dev Board</h1>
-          <p className="text-sm text-muted-foreground mt-1">
+    <Box sx={{ p: 3 }}>
+      <Box display="flex" alignItems="center" justifyContent="space-between" mb={3}>
+        <Box>
+          <Typography variant="h5" fontWeight="bold">Dev Board</Typography>
+          <Typography variant="body2" color="text.secondary">
             {stories.length} stories total
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
+          </Typography>
+        </Box>
+        <Box display="flex" alignItems="center" gap={1.5}>
           {archivedStories.length > 0 && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowArchived(!showArchived)}
-            >
+            <Button variant="outlined" size="small" onClick={() => setShowArchived(!showArchived)}>
               {showArchived ? 'Hide' : 'Show'} Archived ({archivedStories.length})
             </Button>
           )}
-          <Link href="/stories/new">
-            <Button>Create Story</Button>
-          </Link>
-        </div>
-      </div>
+          <Button component={Link} href="/stories/new" variant="contained">
+            Create Story
+          </Button>
+        </Box>
+      </Box>
 
-      <div className="grid grid-cols-6 gap-3">
+      <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 1.5 }}>
         {COLUMNS.map(({ key, label }) => (
-          <div key={key} className="rounded-lg border bg-card p-3">
-            <div className="mb-3 flex items-center justify-between">
-              <h3 className="text-sm font-semibold">{label}</h3>
-              <span className="rounded-full bg-muted px-2 py-0.5 text-xs">
-                {storiesByStatus[key]?.length || 0}
-              </span>
-            </div>
-            <div className="space-y-2">
+          <Paper key={key} variant="outlined" sx={{ p: 1.5, bgcolor: 'background.default' }}>
+            <Box display="flex" alignItems="center" justifyContent="space-between" mb={1.5}>
+              <Typography variant="body2" fontWeight={600}>{label}</Typography>
+              <Chip label={storiesByStatus[key]?.length || 0} size="small" sx={{ height: 22, fontSize: '0.75rem' }} />
+            </Box>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
               {storiesByStatus[key]?.map((story) => (
                 <StoryCard key={story.id} story={story} />
               ))}
               {(!storiesByStatus[key] || storiesByStatus[key].length === 0) && (
-                <p className="text-xs text-muted-foreground text-center py-4">
+                <Typography variant="caption" color="text.secondary" textAlign="center" py={2}>
                   No stories
-                </p>
+                </Typography>
               )}
-            </div>
-          </div>
+            </Box>
+          </Paper>
         ))}
-      </div>
+      </Box>
 
       {showArchived && archivedStories.length > 0 && (
-        <div className="mt-6">
-          <h3 className="text-sm font-semibold mb-3">Archived</h3>
-          <div className="grid grid-cols-3 gap-3">
+        <Box mt={3}>
+          <Typography variant="body2" fontWeight={600} mb={1.5}>Archived</Typography>
+          <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 1.5 }}>
             {archivedStories.map((story) => (
               <StoryCard key={story.id} story={story} />
             ))}
-          </div>
-        </div>
+          </Box>
+        </Box>
       )}
-    </div>
+    </Box>
   );
 }

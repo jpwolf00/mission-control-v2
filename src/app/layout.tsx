@@ -1,9 +1,7 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
 import "./globals.css";
+import ThemeRegistry from "@/components/theme-registry";
 import { Navigation } from "@/components/navigation";
-
-const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "Mission Control 2.0",
@@ -17,9 +15,17 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={inter.className}>
-        <Navigation />
-        {children}
+      <head>
+        <link
+          rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+        />
+      </head>
+      <body>
+        <ThemeRegistry>
+          <Navigation />
+          {children}
+        </ThemeRegistry>
       </body>
     </html>
   );

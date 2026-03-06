@@ -1,5 +1,9 @@
-import { AlertCircle } from "lucide-react";
-import { Button } from "@/components/ui/button";
+'use client';
+
+import Alert from '@mui/material/Alert';
+import AlertTitle from '@mui/material/AlertTitle';
+import Button from '@mui/material/Button';
+import Box from '@mui/material/Box';
 
 interface ErrorMessageProps {
   title?: string;
@@ -7,21 +11,22 @@ interface ErrorMessageProps {
   onRetry?: () => void;
 }
 
-export function ErrorMessage({ 
-  title = "Error", 
-  message, 
-  onRetry 
+export function ErrorMessage({
+  title = "Error",
+  message,
+  onRetry,
 }: ErrorMessageProps) {
   return (
-    <div className="flex flex-col items-center justify-center gap-4 p-8">
-      <div className="flex items-center gap-2 text-red-600">
-        <AlertCircle className="h-6 w-6" />
-        <h3 className="text-lg font-semibold">{title}</h3>
-      </div>
-      <p className="text-center text-muted-foreground">{message}</p>
+    <Box display="flex" flexDirection="column" alignItems="center" justifyContent="center" gap={2} p={4}>
+      <Alert severity="error" sx={{ maxWidth: 480, width: '100%' }}>
+        <AlertTitle>{title}</AlertTitle>
+        {message}
+      </Alert>
       {onRetry && (
-        <Button onClick={onRetry} variant="outline">Retry</Button>
+        <Button onClick={onRetry} variant="outlined">
+          Retry
+        </Button>
       )}
-    </div>
+    </Box>
   );
 }

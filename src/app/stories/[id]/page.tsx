@@ -2,13 +2,28 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import Card from '@mui/material/Card';
+import CardContent from '@mui/material/CardContent';
+import CardHeader from '@mui/material/CardHeader';
+import Chip from '@mui/material/Chip';
+import Button from '@mui/material/Button';
+import Typography from '@mui/material/Typography';
+import Box from '@mui/material/Box';
+import Checkbox from '@mui/material/Checkbox';
 import { GateTimeline } from '@/components/gate-timeline';
 import { PageLoader } from '@/components/loading';
 import { ErrorMessage } from '@/components/error-message';
 import { Story } from '@/domain/story';
+
+const statusChipColors: Record<string, { bg: string; color: string }> = {
+  draft: { bg: '#f1f5f9', color: '#475569' },
+  pending_approval: { bg: '#fef9c3', color: '#854d0e' },
+  approved: { bg: '#dbeafe', color: '#1e40af' },
+  active: { bg: '#dcfce7', color: '#166534' },
+  completed: { bg: '#f3e8ff', color: '#6b21a8' },
+  blocked: { bg: '#fee2e2', color: '#991b1b' },
+  archived: { bg: '#f1f5f9', color: '#475569' },
+};
 
 export default function StoryDetailPage() {
   const params = useParams();
@@ -43,43 +58,43 @@ export default function StoryDetailPage() {
   if (error) return <ErrorMessage message={error} onRetry={fetchStory} />;
   if (!story) return <ErrorMessage message="Story not found" />;
 
-  const statusColors: Record<string, string> = {
-    draft: 'bg-gray-100',
-    pending_approval: 'bg-yellow-100',
-    approved: 'bg-blue-100',
-    active: 'bg-green-100',
-    completed: 'bg-purple-100',
-    blocked: 'bg-red-100',
-    archived: 'bg-gray-100',
-  };
+  const chipColors = statusChipColors[story.status] || statusChipColors.draft;
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex justify-between items-start">
-        <div>
-          <h1 className="text-2xl font-bold">{story.metadata.title}</h1>
-          <p className="text-muted-foreground mt-1">{story.metadata.description}</p>
-          <div className="flex gap-2 mt-3">
-            <Badge className={statusColors[story.status] || 'bg-gray-100'}>{story.status}</Badge>
+    <Box sx={{ p: 3 }}>
+      <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={3}>
+        <Box>
+          <Typography variant="h5" fontWeight="bold">{story.metadata.title}</Typography>
+          <Typography variant="body2" color="text.secondary" mt={0.5}>
+            {story.metadata.description}
+          </Typography>
+          <Box display="flex" gap={1} mt={1.5}>
+            <Chip
+              label={story.status}
+              size="small"
+              sx={{ bgcolor: chipColors.bg, color: chipColors.color }}
+            />
             {story.metadata.priority && (
-              <Badge variant="outline">{story.metadata.priority.toUpperCase()}</Badge>
+              <Chip
+                label={story.metadata.priority.toUpperCase()}
+                size="small"
+                variant="outlined"
+              />
             )}
-          </div>
-        </div>
-        <div className="flex gap-2">
+          </Box>
+        </Box>
+        <Box display="flex" gap={1}>
           {story.status === 'approved' && (
-            <Button>Dispatch to Architect</Button>
+            <Button variant="contained">Dispatch to Architect</Button>
           )}
           {story.status === 'active' && (
-            <Button variant="outline">Pause</Button>
+            <Button variant="outlined">Pause</Button>
           )}
-        </div>
-      </div>
+        </Box>
+      </Box>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Gate Pipeline</CardTitle>
-        </CardHeader>
+      <Card sx={{ mb: 3 }}>
+        <CardHeader title="Gate Pipeline" titleTypographyProps={{ variant: 'h6', fontSize: '1rem' }} />
         <CardContent>
           <GateTimeline
             currentGate="architect"
@@ -89,53 +104,46 @@ export default function StoryDetailPage() {
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-2 gap-6">
+      <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 3 }}>
         <Card>
-          <CardHeader>
-            <CardTitle>Acceptance Criteria</CardTitle>
-          </CardHeader>
+          <CardHeader title="Acceptance Criteria" titleTypographyProps={{ variant: 'h6', fontSize: '1rem' }} />
           <CardContent>
             {story.metadata.acceptanceCriteria && story.metadata.acceptanceCriteria.length > 0 ? (
-              <ul className="space-y-2">
+              <Box component="ul" sx={{ listStyle: 'none', p: 0, m: 0 }}>
                 {story.metadata.acceptanceCriteria.map((criteria, i) => (
-                  <li key={i} className="flex items-center gap-2">
-                    <input type="checkbox" className="rounded" readOnly />
-                    <span>{criteria}</span>
-                  </li>
+                  <Box key={i} component="li" display="flex" alignItems="center" gap={1} mb={0.5}>
+                    <Checkbox size="small" readOnly sx={{ p: 0.5 }} />
+                    <Typography variant="body2">{criteria}</Typography>
+                  </Box>
                 ))}
-              </ul>
+              </Box>
             ) : (
-              <p className="text-sm text-muted-foreground">No acceptance criteria defined</p>
+              <Typography variant="body2" color="text.secondary">No acceptance criteria defined</Typography>
             )}
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader>
-            <CardTitle>Details</CardTitle>
-          </CardHeader>
+          <CardHeader title="Details" titleTypographyProps={{ variant: 'h6', fontSize: '1rem' }} />
           <CardContent>
-            <dl className="space-y-3 text-sm">
-              <div className="flex justify-between">
-                <dt className="text-muted-foreground">Story ID</dt>
-                <dd className="font-mono text-xs">{story.id}</dd>
-              </div>
-              <div className="flex justify-between">
-                <dt className="text-muted-foreground">Requirements Approved</dt>
-                <dd>{story.metadata.approvedRequirementsArtifact ? 'Yes' : 'No'}</dd>
-              </div>
-              <div className="flex justify-between">
-                <dt className="text-muted-foreground">Created</dt>
-                <dd>{new Date(story.createdAt).toLocaleDateString()}</dd>
-              </div>
-              <div className="flex justify-between">
-                <dt className="text-muted-foreground">Updated</dt>
-                <dd>{new Date(story.updatedAt).toLocaleDateString()}</dd>
-              </div>
-            </dl>
+            <Box component="dl" sx={{ m: 0 }}>
+              {[
+                { label: 'Story ID', value: <Typography variant="body2" fontFamily="monospace" fontSize="0.75rem">{story.id}</Typography> },
+                { label: 'Requirements Approved', value: story.metadata.approvedRequirementsArtifact ? 'Yes' : 'No' },
+                { label: 'Created', value: new Date(story.createdAt).toLocaleDateString() },
+                { label: 'Updated', value: new Date(story.updatedAt).toLocaleDateString() },
+              ].map((item, i) => (
+                <Box key={i} display="flex" justifyContent="space-between" mb={1.5}>
+                  <Typography component="dt" variant="body2" color="text.secondary">{item.label}</Typography>
+                  <Typography component="dd" variant="body2" sx={{ m: 0 }}>
+                    {typeof item.value === 'string' ? item.value : item.value}
+                  </Typography>
+                </Box>
+              ))}
+            </Box>
           </CardContent>
         </Card>
-      </div>
-    </div>
+      </Box>
+    </Box>
   );
 }

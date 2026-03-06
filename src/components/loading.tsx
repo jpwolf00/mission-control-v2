@@ -1,17 +1,20 @@
-import { Loader2 } from "lucide-react";
+'use client';
+
+import CircularProgress from '@mui/material/CircularProgress';
+import Box from '@mui/material/Box';
 
 export function LoadingSpinner({ className }: { className?: string }) {
   return (
-    <div className={`flex items-center justify-center ${className}`}>
-      <Loader2 className="h-8 w-8 animate-spin text-primary" />
-    </div>
+    <Box display="flex" alignItems="center" justifyContent="center" className={className}>
+      <CircularProgress />
+    </Box>
   );
 }
 
 export function PageLoader() {
   return (
-    <div className="flex h-[calc(100vh-4rem)] items-center justify-center">
-      <LoadingSpinner />
-    </div>
+    <Box display="flex" alignItems="center" justifyContent="center" height="calc(100vh - 4rem)">
+      <CircularProgress />
+    </Box>
   );
 }

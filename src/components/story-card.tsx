@@ -1,9 +1,12 @@
-import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+'use client';
+
+import Card from '@mui/material/Card';
+import CardContent from '@mui/material/CardContent';
+import Chip from '@mui/material/Chip';
+import Button from '@mui/material/Button';
+import Typography from '@mui/material/Typography';
+import Box from '@mui/material/Box';
 import { Story, StoryStatus } from '@/domain/story';
-import { cn } from '@/lib/utils';
 
 interface StoryCardProps {
   story: Story;
@@ -11,53 +14,86 @@ interface StoryCardProps {
   onDispatch?: () => void;
 }
 
-const statusColors: Record<StoryStatus, string> = {
-  draft: 'bg-slate-100 text-slate-800',
-  pending_approval: 'bg-yellow-100 text-yellow-800',
-  approved: 'bg-blue-100 text-blue-800',
-  active: 'bg-green-100 text-green-800',
-  completed: 'bg-purple-100 text-purple-800',
-  archived: 'bg-gray-100 text-gray-800',
-  blocked: 'bg-red-100 text-red-800',
+const statusChipColors: Record<StoryStatus, { bg: string; text: string }> = {
+  draft: { bg: '#f1f5f9', text: '#475569' },
+  pending_approval: { bg: '#fef9c3', text: '#854d0e' },
+  approved: { bg: '#dbeafe', text: '#1e40af' },
+  active: { bg: '#dcfce7', text: '#166534' },
+  completed: { bg: '#f3e8ff', text: '#6b21a8' },
+  archived: { bg: '#f3f4f6', text: '#374151' },
+  blocked: { bg: '#fee2e2', text: '#991b1b' },
 };
 
 export function StoryCard({ story, onClick, onDispatch }: StoryCardProps) {
+  const chipColor = statusChipColors[story.status] || statusChipColors.draft;
+
   return (
-    <Card 
-      className={cn(
-        "cursor-pointer transition-shadow hover:shadow-md",
-        story.status === 'active' && "border-l-4 border-l-green-500",
-        story.status === 'blocked' && "border-l-4 border-l-red-500"
-      )}
+    <Card
       onClick={onClick}
+      sx={{
+        cursor: onClick ? 'pointer' : 'default',
+        transition: 'box-shadow 0.2s',
+        '&:hover': { boxShadow: 3 },
+        ...(story.status === 'active' && { borderLeft: '4px solid #22c55e' }),
+        ...(story.status === 'blocked' && { borderLeft: '4px solid #ef4444' }),
+      }}
     >
-      <CardHeader className="pb-2">
-        <div className="flex justify-between items-start">
-          <CardTitle className="text-sm font-medium line-clamp-2">
+      <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
+        <Box display="flex" justifyContent="space-between" alignItems="flex-start" gap={1} mb={1}>
+          <Typography
+            variant="body2"
+            fontWeight={500}
+            sx={{
+              display: '-webkit-box',
+              WebkitLineClamp: 2,
+              WebkitBoxOrient: 'vertical',
+              overflow: 'hidden',
+            }}
+          >
             {story.metadata.title}
-          </CardTitle>
-          <Badge className={cn("text-xs", statusColors[story.status])}>
-            {story.status}
-          </Badge>
-        </div>
-      </CardHeader>
-      <CardContent className="pt-0">
-        <p className="text-xs text-muted-foreground line-clamp-2 mb-3">
+          </Typography>
+          <Chip
+            label={story.status.replace('_', ' ')}
+            size="small"
+            sx={{
+              bgcolor: chipColor.bg,
+              color: chipColor.text,
+              fontSize: '0.7rem',
+              height: 22,
+              flexShrink: 0,
+            }}
+          />
+        </Box>
+        <Typography
+          variant="caption"
+          color="text.secondary"
+          sx={{
+            display: '-webkit-box',
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: 'vertical',
+            overflow: 'hidden',
+            mb: 1.5,
+          }}
+        >
           {story.metadata.description}
-        </p>
-        <div className="flex justify-between items-center text-xs">
-          <span className="text-muted-foreground">
+        </Typography>
+        <Box display="flex" justifyContent="space-between" alignItems="center">
+          <Typography variant="caption" color="text.secondary">
             {story.metadata.priority?.toUpperCase() || 'MEDIUM'}
-          </span>
+          </Typography>
           {story.status === 'approved' && onDispatch && (
-            <Button size="sm" variant="outline" onClick={(e) => {
-              e.stopPropagation();
-              onDispatch();
-            }}>
+            <Button
+              size="small"
+              variant="outlined"
+              onClick={(e) => {
+                e.stopPropagation();
+                onDispatch();
+              }}
+            >
               Dispatch
             </Button>
           )}
-        </div>
+        </Box>
       </CardContent>
     </Card>
   );

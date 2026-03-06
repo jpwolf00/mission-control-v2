@@ -2,8 +2,16 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import Card from '@mui/material/Card';
+import CardContent from '@mui/material/CardContent';
+import CardHeader from '@mui/material/CardHeader';
+import Chip from '@mui/material/Chip';
+import Typography from '@mui/material/Typography';
+import Box from '@mui/material/Box';
+import List from '@mui/material/List';
+import ListItemButton from '@mui/material/ListItemButton';
+import ListItemText from '@mui/material/ListItemText';
+import Divider from '@mui/material/Divider';
 
 interface StoryCount {
   total: number;
@@ -23,7 +31,6 @@ export default function DashboardPage() {
   const [health, setHealth] = useState<HealthStatus>({ status: 'checking' });
 
   useEffect(() => {
-    // Fetch story counts
     fetch('/api/v1/stories')
       .then((res) => res.json())
       .then((data) => {
@@ -38,132 +45,104 @@ export default function DashboardPage() {
       })
       .catch(() => setCounts({ total: 0, active: 0, draft: 0, completed: 0, blocked: 0 }));
 
-    // Fetch health
     fetch('/api/v1/health')
       .then((res) => res.json())
       .then((data) => setHealth(data))
       .catch(() => setHealth({ status: 'error' }));
   }, []);
 
-  const healthColor = health.status === 'healthy' ? 'bg-green-100 text-green-800' :
-    health.status === 'checking' ? 'bg-blue-100 text-blue-800' :
-    'bg-red-100 text-red-800';
+  const healthChip = health.status === 'healthy'
+    ? { label: 'Healthy', bg: '#dcfce7', color: '#166534' }
+    : health.status === 'checking'
+    ? { label: 'Checking...', bg: '#dbeafe', color: '#1e40af' }
+    : { label: 'Degraded', bg: '#fee2e2', color: '#991b1b' };
 
   return (
-    <div className="p-6 space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">Dashboard</h1>
-        <p className="text-muted-foreground">System overview and key metrics</p>
-      </div>
+    <Box sx={{ p: 3 }}>
+      <Box mb={3}>
+        <Typography variant="h5" fontWeight="bold">Dashboard</Typography>
+        <Typography variant="body2" color="text.secondary">System overview and key metrics</Typography>
+      </Box>
 
-      <div className="grid grid-cols-4 gap-4">
+      <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 2, mb: 3 }}>
+        <StatCard title="Total Stories" value={counts.total} subtitle={`${counts.active} active, ${counts.draft} draft`} />
+        <StatCard title="Active Stories" value={counts.active} valueColor="#3b82f6" subtitle="In gate pipeline" />
+        <StatCard title="Completed" value={counts.completed} valueColor="#22c55e" subtitle="Through all gates" />
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Total Stories</CardTitle>
-          </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{counts.total}</div>
-            <p className="text-xs text-muted-foreground">{counts.active} active, {counts.draft} draft</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Active Stories</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-blue-600">{counts.active}</div>
-            <p className="text-xs text-muted-foreground">In gate pipeline</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Completed</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">{counts.completed}</div>
-            <p className="text-xs text-muted-foreground">Through all gates</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">System Status</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Badge className={healthColor}>
-              {health.status === 'healthy' ? 'Healthy' : health.status === 'checking' ? 'Checking...' : 'Degraded'}
-            </Badge>
-            <p className="text-xs text-muted-foreground mt-1">
+            <Typography variant="body2" color="text.secondary" gutterBottom>System Status</Typography>
+            <Chip label={healthChip.label} size="small" sx={{ bgcolor: healthChip.bg, color: healthChip.color, mb: 0.5 }} />
+            <Typography variant="caption" color="text.secondary" display="block">
               {health.database === 'connected' ? 'DB connected' : 'DB status unknown'}
-            </p>
+            </Typography>
           </CardContent>
         </Card>
-      </div>
+      </Box>
 
       {counts.blocked > 0 && (
-        <Card className="border-red-200">
-          <CardContent className="pt-4">
-            <div className="flex items-center gap-2">
-              <Badge className="bg-red-100 text-red-800">{counts.blocked} Blocked</Badge>
-              <span className="text-sm text-muted-foreground">
-                Stories need attention
-              </span>
-              <Link href="/stories" className="text-sm text-blue-600 hover:underline ml-auto">
-                View stories
-              </Link>
-            </div>
+        <Card sx={{ borderColor: '#fecaca', mb: 3 }}>
+          <CardContent sx={{ display: 'flex', alignItems: 'center', gap: 1.5, py: 2, '&:last-child': { pb: 2 } }}>
+            <Chip label={`${counts.blocked} Blocked`} size="small" sx={{ bgcolor: '#fee2e2', color: '#991b1b' }} />
+            <Typography variant="body2" color="text.secondary">Stories need attention</Typography>
+            <Link href="/stories" style={{ marginLeft: 'auto', color: '#3b82f6', fontSize: '0.875rem' }}>
+              View stories
+            </Link>
           </CardContent>
         </Card>
       )}
 
-      <div className="grid grid-cols-2 gap-4">
+      <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 2 }}>
         <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center justify-between">
-              <span>Gate Pipeline</span>
-              <Link href="/stories" className="text-sm font-normal text-blue-600 hover:underline">
+          <CardHeader
+            title="Gate Pipeline"
+            action={
+              <Link href="/stories" style={{ color: '#3b82f6', fontSize: '0.875rem', textDecoration: 'none' }}>
                 View all
               </Link>
-            </CardTitle>
-          </CardHeader>
+            }
+            titleTypographyProps={{ variant: 'h6', fontSize: '1rem' }}
+          />
           <CardContent>
-            <div className="space-y-3">
-              {['architect', 'implementer', 'reviewer-a', 'operator', 'reviewer-b'].map((gate) => (
-                <div key={gate} className="flex justify-between items-center">
-                  <span className="text-sm capitalize">{gate}</span>
-                  <Badge variant="outline" className="text-xs">pipeline stage</Badge>
-                </div>
-              ))}
-            </div>
+            {['architect', 'implementer', 'reviewer-a', 'operator', 'reviewer-b'].map((gate, i) => (
+              <Box key={gate}>
+                {i > 0 && <Divider sx={{ my: 1 }} />}
+                <Box display="flex" justifyContent="space-between" alignItems="center" py={0.5}>
+                  <Typography variant="body2" sx={{ textTransform: 'capitalize' }}>{gate}</Typography>
+                  <Chip label="pipeline stage" size="small" variant="outlined" sx={{ fontSize: '0.7rem' }} />
+                </Box>
+              </Box>
+            ))}
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center justify-between">
-              <span>Quick Actions</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              <Link
-                href="/stories"
-                className="block p-3 rounded-lg border hover:bg-muted/50 text-sm"
-              >
-                View Dev Board &rarr;
-              </Link>
-              <Link
-                href="/deploy"
-                className="block p-3 rounded-lg border hover:bg-muted/50 text-sm"
-              >
-                Manage Deployments &rarr;
-              </Link>
-            </div>
+          <CardHeader title="Quick Actions" titleTypographyProps={{ variant: 'h6', fontSize: '1rem' }} />
+          <CardContent sx={{ pt: 0 }}>
+            <List disablePadding>
+              <ListItemButton component={Link} href="/stories" sx={{ borderRadius: 1, mb: 1 }}>
+                <ListItemText primary="View Dev Board" primaryTypographyProps={{ variant: 'body2' }} />
+                <Typography color="text.secondary">&rarr;</Typography>
+              </ListItemButton>
+              <ListItemButton component={Link} href="/deploy" sx={{ borderRadius: 1 }}>
+                <ListItemText primary="Manage Deployments" primaryTypographyProps={{ variant: 'body2' }} />
+                <Typography color="text.secondary">&rarr;</Typography>
+              </ListItemButton>
+            </List>
           </CardContent>
         </Card>
-      </div>
-    </div>
+      </Box>
+    </Box>
+  );
+}
+
+function StatCard({ title, value, valueColor, subtitle }: { title: string; value: number; valueColor?: string; subtitle: string }) {
+  return (
+    <Card>
+      <CardContent>
+        <Typography variant="body2" color="text.secondary" gutterBottom>{title}</Typography>
+        <Typography variant="h4" fontWeight="bold" sx={{ color: valueColor }}>{value}</Typography>
+        <Typography variant="caption" color="text.secondary">{subtitle}</Typography>
+      </CardContent>
+    </Card>
   );
 }
