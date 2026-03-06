@@ -140,7 +140,7 @@ export function getDispatchStatus(result: DispatchResult): DispatchStatus | null
   
   return createDispatchStatus(
     result.story.id,
-    result.story.status.gate!,
+    ((result.story.status as { gate?: string }).gate || "architect") as Gate,
     lockResult.lock.sessionId,
     result.idempotencyKey,
     lockResult
