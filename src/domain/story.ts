@@ -25,12 +25,24 @@ export interface StoryMetadata {
 }
 
 /**
+ * Gate completion info returned in API responses
+ */
+export interface StoryGateInfo {
+  gate: string;
+  status: string;
+  completedAt?: Date | null;
+  completedBy?: string | null;
+}
+
+/**
  * Core Story entity
  */
 export interface Story {
   id: string;
   status: StoryStatus;
   metadata: StoryMetadata;
+  gates?: StoryGateInfo[];
+  currentGate?: string | null;
   createdAt: Date;
   updatedAt: Date;
 }

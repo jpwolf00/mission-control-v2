@@ -7,7 +7,7 @@ import {
   isCompletionStatus,
   type GateEvidence,
 } from '@/domain/gate-contracts';
-import { getStoryByIdFromDB } from '@/services/story-store-db';
+import { getStoryByIdFromDB, saveGateCompletion, updateStoryStatus } from '@/services/story-store-db';
 import { requireIdempotencyKey } from '@/api/v1/idempotency';
 import { releaseLock } from '@/services/lock-service';
 import type { Gate } from '@/domain/workflow-types';
@@ -84,9 +84,29 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // On approved completion, release the dispatch lock
+    // Story 1: Persist gate completion to database
+    await saveGateCompletion({
+      storyId,
+      gate,
+      status,
+      evidence: gateEvidence,
+      completedBy: sessionId,
+    });
+
+    // Story 2: Auto status transitions
     if (status === 'approved') {
+      if (gate === 'reviewer-b') {
+        // Final gate approved → story completed
+        await updateStoryStatus(storyId, 'completed');
+      } else if (story.status === 'approved') {
+        // First gate approved on a newly-approved story → mark active
+        await updateStoryStatus(storyId, 'active');
+      }
+      // Release the dispatch lock
       releaseLock(storyId, gate as Gate, sessionId);
+    } else if (status === 'rejected') {
+      // Gate rejected → story blocked
+      await updateStoryStatus(storyId, 'blocked');
     }
 
     return NextResponse.json(completion);

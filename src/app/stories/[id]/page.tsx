@@ -97,9 +97,9 @@ export default function StoryDetailPage() {
         <CardHeader title="Gate Pipeline" titleTypographyProps={{ variant: 'h6', fontSize: '1rem' }} />
         <CardContent>
           <GateTimeline
-            currentGate="architect"
-            completedGates={[]}
-            failedGates={[]}
+            currentGate={(story.currentGate || 'architect') as 'architect' | 'implementer' | 'reviewer-a' | 'operator' | 'reviewer-b'}
+            completedGates={(story.gates || []).filter(g => g.status === 'approved').map(g => g.gate) as ('architect' | 'implementer' | 'reviewer-a' | 'operator' | 'reviewer-b')[]}
+            failedGates={(story.gates || []).filter(g => g.status === 'rejected').map(g => g.gate) as ('architect' | 'implementer' | 'reviewer-a' | 'operator' | 'reviewer-b')[]}
           />
         </CardContent>
       </Card>

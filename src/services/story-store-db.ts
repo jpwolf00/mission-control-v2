@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma';
-import { Story, CreateStoryInput } from '@/domain/story';
+import { Story, StoryGateInfo, CreateStoryInput } from '@/domain/story';
+import { GATES } from '@/domain/workflow-types';
 import { v4 as uuidv4 } from 'uuid';
 
 export async function createStoryInDB(input: CreateStoryInput): Promise<Story> {
@@ -15,6 +16,7 @@ export async function createStoryInDB(input: CreateStoryInput): Promise<Story> {
         status: 'draft',
         approvedRequirementsArtifact: false,
       },
+      include: { gates: true },
     });
     return mapPrismaToDomain(story);
   } catch (error) {
@@ -27,6 +29,7 @@ export async function getStoriesFromDB(): Promise<Story[]> {
   try {
     const stories = await prisma.story.findMany({
       orderBy: { createdAt: 'desc' },
+      include: { gates: true },
     });
     return stories.map(mapPrismaToDomain);
   } catch (error) {
@@ -47,7 +50,7 @@ export async function getStoryByIdFromDB(id: string): Promise<Story | null> {
         },
       },
     });
-    
+
     if (!story) return null;
     return mapPrismaToDomain(story);
   } catch (error) {
@@ -67,8 +70,9 @@ export async function approveRequirementsInDB(
         approvedRequirementsArtifact: approved,
         status: approved ? 'approved' : 'draft',
       },
+      include: { gates: true },
     });
-    
+
     return mapPrismaToDomain(story);
   } catch (error) {
     console.error('Database error in approveRequirementsInDB:', error);
@@ -76,7 +80,51 @@ export async function approveRequirementsInDB(
   }
 }
 
-function mapPrismaToDomain(prismaStory: {
+/**
+ * Persist a gate completion to the database (Story 1 fix)
+ */
+export async function saveGateCompletion(data: {
+  storyId: string;
+  gate: string;
+  status: string;
+  evidence: unknown;
+  completedBy: string;
+}): Promise<void> {
+  try {
+    await prisma.storyGate.create({
+      data: {
+        id: uuidv4(),
+        storyId: data.storyId,
+        gate: data.gate,
+        status: data.status,
+        evidence: data.evidence as object ?? undefined,
+        completedAt: data.status !== 'pending' ? new Date() : null,
+        completedBy: data.completedBy,
+      },
+    });
+  } catch (error) {
+    console.error('Database error in saveGateCompletion:', error);
+    throw new Error('Failed to save gate completion');
+  }
+}
+
+/**
+ * Update a story's status (Story 2 fix)
+ */
+export async function updateStoryStatus(storyId: string, status: string): Promise<void> {
+  try {
+    await prisma.story.update({
+      where: { id: storyId },
+      data: { status },
+    });
+  } catch (error) {
+    console.error('Database error in updateStoryStatus:', error);
+    throw new Error('Failed to update story status');
+  }
+}
+
+// Type for Prisma story with optional gates relation
+interface PrismaStoryWithGates {
   id: string;
   title: string;
   description: string | null;
@@ -87,7 +135,54 @@ function mapPrismaToDomain(prismaStory: {
   acceptanceCriteria: string[];
   createdAt: Date;
   updatedAt: Date;
-}): Story {
+  gates?: Array<{
+    id: string;
+    gate: string;
+    status: string;
+    completedAt: Date | null;
+    completedBy: string | null;
+  }>;
+}
+
+/**
+ * Compute the current gate based on completed gates (Story 3 fix)
+ * Returns the next gate after the last approved one, or the first gate if none approved.
+ */
+function computeCurrentGate(gates: StoryGateInfo[], storyStatus: string): string | null {
+  if (storyStatus === 'completed' || storyStatus === 'draft' || storyStatus === 'archived') {
+    return null;
+  }
+
+  // Find the furthest approved gate in pipeline order
+  const gateOrder = GATES as readonly string[];
+  let lastApprovedIndex = -1;
+
+  for (const gateInfo of gates) {
+    if (gateInfo.status === 'approved') {
+      const idx = gateOrder.indexOf(gateInfo.gate);
+      if (idx > lastApprovedIndex) {
+        lastApprovedIndex = idx;
+      }
+    }
+  }
+
+  // Next gate after last approved, or first gate if none approved yet
+  const nextIndex = lastApprovedIndex + 1;
+  if (nextIndex >= gateOrder.length) {
+    return null; // All gates completed
+  }
+
+  return gateOrder[nextIndex];
+}
+
+function mapPrismaToDomain(prismaStory: PrismaStoryWithGates): Story {
+  const gateInfos: StoryGateInfo[] = (prismaStory.gates || []).map((g) => ({
+    gate: g.gate,
+    status: g.status,
+    completedAt: g.completedAt,
+    completedBy: g.completedBy,
+  }));
+
   return {
     id: prismaStory.id,
     status: prismaStory.status as Story['status'],
@@ -99,6 +194,8 @@ function mapPrismaToDomain(prismaStory: {
       acceptanceCriteria: prismaStory.acceptanceCriteria,
       priority: (prismaStory.priority as Story['metadata']['priority']) || 'medium',
     },
+    gates: gateInfos,
+    currentGate: computeCurrentGate(gateInfos, prismaStory.status),
     createdAt: prismaStory.createdAt,
     updatedAt: prismaStory.updatedAt,
   };
