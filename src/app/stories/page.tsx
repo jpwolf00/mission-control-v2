@@ -76,6 +76,27 @@ export default function StoriesPage() {
     }
   };
 
+  const handleApprove = async (story: Story) => {
+    try {
+      const response = await fetch(`/api/v1/stories/${story.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ action: 'approve' }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to approve story');
+      }
+      setSnackbar({ open: true, message: `Approved "${story.metadata.title}"`, severity: 'success' });
+      // Refetch to update board
+      await fetchStories();
+    } catch (err) {
+      setSnackbar({ open: true, message: err instanceof Error ? err.message : 'Approve failed', severity: 'error' });
+    }
+  };
+
   useEffect(() => {
     fetchStories();
   }, []);
@@ -124,6 +145,7 @@ export default function StoriesPage() {
                   story={story}
                   onClick={() => router.push(`/stories/${story.id}`)}
                   onDispatch={story.status === 'approved' ? () => handleDispatch(story) : undefined}
+                  onApprove={(story.status === 'draft' || story.status === 'pending_approval') ? () => handleApprove(story) : undefined}
                 />
               ))}
               {(!storiesByStatus[key] || storiesByStatus[key].length === 0) && (
@@ -141,7 +163,12 @@ export default function StoriesPage() {
           <Typography variant="body2" fontWeight={600} mb={1.5}>Archived</Typography>
           <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 1.5 }}>
             {archivedStories.map((story) => (
-              <StoryCard key={story.id} story={story} onClick={() => router.push(`/stories/${story.id}`)} />
+              <StoryCard
+                key={story.id}
+                story={story}
+                onClick={() => router.push(`/stories/${story.id}`)}
+                onApprove={(story.status === 'draft' || story.status === 'pending_approval') ? () => handleApprove(story) : undefined}
+              />
             ))}
           </Box>
         </Box>

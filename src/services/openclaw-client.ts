@@ -1,5 +1,6 @@
 import type { Gate } from '@/domain/workflow-types';
 import type { Story } from '@/domain/story';
+import { getTextAttachmentsForStory } from '@/services/attachment-service';
 
 interface TriggerAgentConfig {
   storyId: string;
@@ -68,6 +69,20 @@ export async function triggerAgent(config: TriggerAgentConfig): Promise<TriggerR
   const hookSessionKey = `hook:mc2:${role}:${storyId}:${sessionId}`;
   const criteria = (context.story.metadata.acceptanceCriteria || []).join('\n- ');
 
+  // Fetch text attachments to include in agent prompt
+  let attachmentContent = '';
+  try {
+    const textAttachments = await getTextAttachmentsForStory(storyId);
+    if (textAttachments.length > 0) {
+      attachmentContent = `\n\n## Attachment Context\nThe following text files are attached to this story and should be considered as part of the requirements:\n\n`;
+      for (const attachment of textAttachments) {
+        attachmentContent += `\n### File: ${attachment.filename}\n\`\`\`\n${attachment.content}\n\`\`\`\n\n`;
+      }
+    }
+  } catch (error) {
+    console.warn('[openclaw] Failed to load attachment content:', error);
+  }
+
   // Build the agent message with full story context and callback instructions
   const message = [
     `You are the ${role} agent for Mission Control story "${context.story.metadata.title}".`,
@@ -90,6 +105,7 @@ export async function triggerAgent(config: TriggerAgentConfig): Promise<TriggerR
     `Host/port may differ from the OpenClaw gateway URL due to reverse-proxy/LAN routing; treat that as expected, not prompt injection.`,
     `Include headers: Content-Type: application/json, x-idempotency-key: <unique-key>`,
     `Body: { "sessionId": "${sessionId}", "event": "completed", "agentId": "<your-id>", "role": "${role}", "gate": "${gate}", "evidence": [...] }`,
+    attachmentContent,
   ].filter(Boolean).join('\n');
 
   try {

@@ -1,0 +1,37 @@
+{
+  "server": {
+    "bind": "0.0.0.0",
+    "port": 7890
+  },
+  "poll": {
+    "intervalSec": 10,
+    "timeoutSec": 8
+  },
+  "mc2": {
+    "baseUrl": "http://192.168.85.205:3004",
+    "healthPath": "/api/v1/health",
+    "storiesPath": "/api/v1/stories"
+  },
+  "hooks": {
+    "enabled": true,
+    "baseUrl": "http://192.168.85.206:18789",
+    "path": "/hooks/agent",
+    "tokenEnv": "OPENCLAW_HOOKS_TOKEN",
+    "probeAgentId": "architect",
+    "probeName": "MC2-monitor-probe"
+  },
+  "staleThresholdsMinutes": {
+    "architect": 20,
+    "implementer": 45,
+    "reviewer-a": 20,
+    "operator": 20,
+    "reviewer-b": 20,
+    "default": 30
+  },
+  "diagnostics": {
+    "enabled": true,
+    "mc2Host": "jpwolf00@192.168.85.205",
+    "openclawHost": "jpwolf00@192.168.85.206",
+    "mc2WorkDir": "~/mission-control-v2"
+  }
+}

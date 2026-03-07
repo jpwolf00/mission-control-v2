@@ -7,6 +7,19 @@ export const STORY_STATUSES = ["draft", "pending_approval", "approved", "active"
 export type StoryStatus = (typeof STORY_STATUSES)[number];
 
 /**
+ * Story attachment reference (lightweight metadata)
+ */
+export interface StoryAttachmentRef {
+  id: string;
+  filename: string;
+  originalName: string;
+  mimeType: string;
+  size: number;
+  googleDriveUrl: string;
+  description?: string;
+}
+
+/**
  * Story metadata required for dispatch precondition
  */
 export interface StoryMetadata {
@@ -22,6 +35,8 @@ export interface StoryMetadata {
   acceptanceCriteria?: string[];
   /** Priority level: low, medium, high, critical */
   priority?: "low" | "medium" | "high" | "critical";
+  /** Attachments associated with this story */
+  attachments?: StoryAttachmentRef[];
 }
 
 /**
@@ -56,6 +71,7 @@ export interface CreateStoryInput {
   requirementsArtifactId?: string;
   acceptanceCriteria?: string[];
   priority?: "low" | "medium" | "high" | "critical";
+  attachments?: StoryAttachmentRef[];
 }
 
 // Type guard for StoryStatus

@@ -25,6 +25,7 @@ model Story {
   sessions    RunSession[]
   events      StoryEvent[]
   locks       DispatchLock[]
+  attachments StoryAttachment[]
   
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
@@ -114,5 +115,33 @@ model AgentSession {
   metadata  Json?
 
   @@map("agent_sessions")
+  @@index([storyId])
+}
+
+model StoryAttachment {
+  id          String   @id @default(uuid())
+  storyId     String   @map("story_id")
+  filename    String   @map("filename")
+  originalName String  @map("original_name")
+  mimeType    String   @map("mime_type")
+  size        Int      @map("size_bytes")
+  
+  // Storage locations
+  localPath   String   @map("local_path")
+  googleDriveFileId String @map("google_drive_file_id")
+  googleDriveUrl String @map("google_drive_url")
+  
+  // Metadata
+  uploadedBy  String?  @map("uploaded_by")
+  description String?  @map("description")
+  
+  // Timestamps
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  
+  // Relations
+  story       Story    @relation(fields: [storyId], references: [id], onDelete: Cascade)
+  
+  @@map("story_attachments")
   @@index([storyId])
 }

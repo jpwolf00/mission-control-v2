@@ -12,6 +12,7 @@ interface StoryCardProps {
   story: Story;
   onClick?: () => void;
   onDispatch?: () => void;
+  onApprove?: () => void;
 }
 
 const statusChipColors: Record<StoryStatus, { bg: string; text: string }> = {
@@ -24,7 +25,7 @@ const statusChipColors: Record<StoryStatus, { bg: string; text: string }> = {
   blocked: { bg: '#fee2e2', text: '#991b1b' },
 };
 
-export function StoryCard({ story, onClick, onDispatch }: StoryCardProps) {
+export function StoryCard({ story, onClick, onDispatch, onApprove }: StoryCardProps) {
   const chipColor = statusChipColors[story.status] || statusChipColors.draft;
 
   return (
@@ -81,18 +82,33 @@ export function StoryCard({ story, onClick, onDispatch }: StoryCardProps) {
           <Typography variant="caption" color="text.secondary">
             {story.metadata.priority?.toUpperCase() || 'MEDIUM'}
           </Typography>
-          {story.status === 'approved' && onDispatch && (
-            <Button
-              size="small"
-              variant="outlined"
-              onClick={(e) => {
-                e.stopPropagation();
-                onDispatch();
-              }}
-            >
-              Dispatch
-            </Button>
-          )}
+          <Box display="flex" gap={0.5}>
+            {(story.status === 'draft' || story.status === 'pending_approval') && onApprove && (
+              <Button
+                size="small"
+                variant="contained"
+                color="success"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onApprove();
+                }}
+              >
+                Approve
+              </Button>
+            )}
+            {story.status === 'approved' && onDispatch && (
+              <Button
+                size="small"
+                variant="outlined"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDispatch();
+                }}
+              >
+                Dispatch
+              </Button>
+            )}
+          </Box>
         </Box>
       </CardContent>
     </Card>

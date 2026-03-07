@@ -15,7 +15,19 @@ import CircularProgress from '@mui/material/CircularProgress';
 import { GateTimeline } from '@/components/gate-timeline';
 import { PageLoader } from '@/components/loading';
 import { ErrorMessage } from '@/components/error-message';
+import { AttachmentUpload } from '@/components/attachment-upload';
 import { Story } from '@/domain/story';
+
+interface Attachment {
+  id: string;
+  filename: string;
+  originalName: string;
+  mimeType: string;
+  size: number;
+  googleDriveUrl: string;
+  description?: string;
+  createdAt: string;
+}
 
 const statusChipColors: Record<string, { bg: string; color: string }> = {
   draft: { bg: '#f1f5f9', color: '#475569' },
@@ -40,6 +52,11 @@ export default function StoryDetailPage() {
   const [dispatching, setDispatching] = useState(false);
   const [dispatchError, setDispatchError] = useState<string | null>(null);
   const [dispatchSuccess, setDispatchSuccess] = useState<string | null>(null);
+  const [approving, setApproving] = useState(false);
+  const [approveError, setApproveError] = useState<string | null>(null);
+  const [approveSuccess, setApproveSuccess] = useState<string | null>(null);
+  const [attachments, setAttachments] = useState<Attachment[]>([]);
+  const [attachmentsLoading, setAttachmentsLoading] = useState(false);
 
   const fetchStory = async () => {
     setLoading(true);
@@ -57,6 +74,30 @@ export default function StoryDetailPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const fetchAttachments = async () => {
+    setAttachmentsLoading(true);
+    try {
+      const response = await fetch(`/api/v1/stories/${storyId}/attachments`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch attachments');
+      }
+      const data = await response.json();
+      setAttachments(data.attachments || []);
+    } catch (err) {
+      console.error('Failed to fetch attachments:', err);
+    } finally {
+      setAttachmentsLoading(false);
+    }
+  };
+
+  const handleAttachmentUpload = (attachment: Attachment) => {
+    setAttachments((prev) => [...prev, attachment]);
+  };
+
+  const handleAttachmentDelete = (attachmentId: string) => {
+    setAttachments((prev) => prev.filter((a) => a.id !== attachmentId));
   };
 
   const handleDispatch = async (gate: string) => {
@@ -86,8 +127,35 @@ export default function StoryDetailPage() {
     }
   };
 
+  const handleApprove = async (approve: boolean) => {
+    setApproving(true);
+    setApproveError(null);
+    setApproveSuccess(null);
+    try {
+      const response = await fetch(`/api/v1/stories/${storyId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ action: approve ? 'approve' : 'reject' }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to update story');
+      }
+      setApproveSuccess(approve ? 'Story approved and ready for dispatch' : 'Story rejected');
+      // Refetch story to reflect new status
+      await fetchStory();
+    } catch (err) {
+      setApproveError(err instanceof Error ? err.message : 'Failed to update story');
+    } finally {
+      setApproving(false);
+    }
+  };
+
   useEffect(() => {
     fetchStory();
+    fetchAttachments();
   }, [storyId]);
 
   if (loading) return <PageLoader />;
@@ -101,6 +169,16 @@ export default function StoryDetailPage() {
 
   return (
     <Box sx={{ p: 3 }}>
+      {approveError && (
+        <Alert severity="error" sx={{ mb: 2 }} onClose={() => setApproveError(null)}>
+          {approveError}
+        </Alert>
+      )}
+      {approveSuccess && (
+        <Alert severity="success" sx={{ mb: 2 }} onClose={() => setApproveSuccess(null)}>
+          {approveSuccess}
+        </Alert>
+      )}
       {dispatchError && (
         <Alert severity="error" sx={{ mb: 2 }} onClose={() => setDispatchError(null)}>
           {dispatchError}
@@ -134,6 +212,27 @@ export default function StoryDetailPage() {
           </Box>
         </Box>
         <Box display="flex" gap={1}>
+          {(story.status === 'draft' || story.status === 'pending_approval') && (
+            <>
+              <Button
+                variant="contained"
+                color="success"
+                disabled={approving}
+                onClick={() => handleApprove(true)}
+                startIcon={approving ? <CircularProgress size={16} color="inherit" /> : undefined}
+              >
+                {approving ? 'Approving...' : 'Approve Story'}
+              </Button>
+              <Button
+                variant="outlined"
+                color="error"
+                disabled={approving}
+                onClick={() => handleApprove(false)}
+              >
+                Reject
+              </Button>
+            </>
+          )}
           {story.status === 'approved' && (
             <Button
               variant="contained"
@@ -198,6 +297,25 @@ export default function StoryDetailPage() {
           </CardContent>
         </Card>
       </Box>
+
+      {/* Attachments Section */}
+      <Card sx={{ mt: 3 }}>
+        <CardHeader title="Attachments" titleTypographyProps={{ variant: 'h6', fontSize: '1rem' }} />
+        <CardContent>
+          {attachmentsLoading ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
+              <CircularProgress size={24} />
+            </Box>
+          ) : (
+            <AttachmentUpload
+              storyId={storyId}
+              attachments={attachments}
+              onUpload={handleAttachmentUpload}
+              onDelete={handleAttachmentDelete}
+            />
+          )}
+        </CardContent>
+      </Card>
     </Box>
   );
 }

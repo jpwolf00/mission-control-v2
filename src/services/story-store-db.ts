@@ -48,6 +48,9 @@ export async function getStoryByIdFromDB(id: string): Promise<Story | null> {
           orderBy: { createdAt: 'desc' },
           take: 1,
         },
+        attachments: {
+          orderBy: { createdAt: 'asc' },
+        },
       },
     });
 
@@ -142,6 +145,16 @@ interface PrismaStoryWithGates {
     completedAt: Date | null;
     completedBy: string | null;
   }>;
+  attachments?: Array<{
+    id: string;
+    filename: string;
+    originalName: string;
+    mimeType: string;
+    size: number;
+    googleDriveUrl: string;
+    description: string | null;
+    createdAt: Date;
+  }>;
 }
 
 /**
@@ -183,6 +196,17 @@ function mapPrismaToDomain(prismaStory: PrismaStoryWithGates): Story {
     completedBy: g.completedBy,
   }));
 
+  // Map attachments to StoryAttachmentRef format
+  const attachmentRefs = (prismaStory.attachments || []).map((a) => ({
+    id: a.id,
+    filename: a.filename,
+    originalName: a.originalName,
+    mimeType: a.mimeType,
+    size: a.size,
+    googleDriveUrl: a.googleDriveUrl,
+    description: a.description || undefined,
+  }));
+
   return {
     id: prismaStory.id,
     status: prismaStory.status as Story['status'],
@@ -193,6 +217,7 @@ function mapPrismaToDomain(prismaStory: PrismaStoryWithGates): Story {
       approvedRequirementsArtifact: prismaStory.approvedRequirementsArtifact,
       acceptanceCriteria: prismaStory.acceptanceCriteria,
       priority: (prismaStory.priority as Story['metadata']['priority']) || 'medium',
+      attachments: attachmentRefs.length > 0 ? attachmentRefs : undefined,
     },
     gates: gateInfos,
     currentGate: computeCurrentGate(gateInfos, prismaStory.status),
