@@ -28,5 +28,17 @@ services:
       db:
         condition: service_healthy
 
+  orchestrator:
+    build: .
+    command: ["node", "scripts/orchestrator-worker.js"]
+    environment:
+      ORCHESTRATOR_APP_URL: http://app:3000
+      ORCHESTRATOR_INTERVAL_MS: ${ORCHESTRATOR_INTERVAL_MS:-10000}
+      ORCHESTRATOR_START_DELAY_MS: ${ORCHESTRATOR_START_DELAY_MS:-5000}
+    depends_on:
+      app:
+        condition: service_started
+    restart: unless-stopped
+
 volumes:
   postgres_data:
