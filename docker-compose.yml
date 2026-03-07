@@ -22,6 +22,7 @@ services:
       NODE_ENV: production
       OPENCLAW_GATEWAY_URL: ${OPENCLAW_GATEWAY_URL}
       OPENCLAW_GATEWAY_TOKEN: ${OPENCLAW_GATEWAY_TOKEN}
+      OPENCLAW_CALLBACK_URL: ${OPENCLAW_CALLBACK_URL:-}
       APP_URL: ${APP_URL}
     depends_on:
       db:
