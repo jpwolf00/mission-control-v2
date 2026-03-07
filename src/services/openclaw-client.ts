@@ -39,8 +39,10 @@ export function gateToRole(gate: Gate): string {
  *
  * Requires OpenClaw gateway config:
  *   hooks.enabled: true
- *   hooks.token: <OPENCLAW_GATEWAY_TOKEN>
+ *   hooks.token: <OPENCLAW_HOOK_TOKEN>  (must differ from gateway auth token)
  *   hooks.allowedAgentIds: ["architect","implementer","reviewer-a","operator","reviewer-b"]
+ *
+ * MC2 env: OPENCLAW_HOOK_TOKEN (falls back to OPENCLAW_GATEWAY_TOKEN if not set)
  *
  * Each gate role should map to an OpenClaw agent workspace with matching agentId.
  */
@@ -53,9 +55,9 @@ export async function triggerAgent(config: TriggerAgentConfig): Promise<TriggerR
   console.log(`[openclaw]   Role: ${role}`);
 
   const gatewayUrl = process.env.OPENCLAW_GATEWAY_URL;
-  const gatewayToken = process.env.OPENCLAW_GATEWAY_TOKEN;
+  const hookToken = process.env.OPENCLAW_HOOK_TOKEN || process.env.OPENCLAW_GATEWAY_TOKEN;
 
-  if (!gatewayUrl || !gatewayToken) {
+  if (!gatewayUrl || !hookToken) {
     console.warn(`[openclaw]   Gateway not configured, using stub mode`);
     const stubAgentId = `agent-${role}-${Date.now().toString(36)}`;
     return { success: true, agentId: stubAgentId };
@@ -85,7 +87,7 @@ export async function triggerAgent(config: TriggerAgentConfig): Promise<TriggerR
     const response = await fetch(`${gatewayUrl}/hooks/agent`, {
       method: 'POST',
       headers: {
-        'x-openclaw-token': gatewayToken,
+        'x-openclaw-token': hookToken,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
