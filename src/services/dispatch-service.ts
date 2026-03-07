@@ -18,20 +18,32 @@ const activeSessions = new Map<string, {
   idempotencyKey: string;
 }>();
 
+const ACTIVE_SESSION_TTL_MS = Number(process.env.ACTIVE_SESSION_TTL_MS || 15 * 60 * 1000);
+
 export async function dispatchStory(
   storyId: string,
   gate: string,
   idempotencyKey: string
 ): Promise<DispatchResult> {
-  // Check for existing session with same idempotency key
+  // Check for existing session with same idempotency key.
+  // If it is stale, expire and allow fresh dispatch.
   for (const [sessionId, session] of activeSessions) {
-    if (session.idempotencyKey === idempotencyKey) {
-      return {
-        success: true,
-        sessionId,
-        code: 'IDEMPOTENT',
-      };
+    if (session.idempotencyKey !== idempotencyKey) continue;
+
+    const ageMs = Date.now() - session.startedAt.getTime();
+    if (ageMs > ACTIVE_SESSION_TTL_MS) {
+      console.warn(
+        `[dispatch] Expiring stale session ${sessionId} for story=${session.storyId} gate=${session.gate} ageMs=${ageMs}`
+      );
+      completeSession(sessionId);
+      continue;
     }
+
+    return {
+      success: true,
+      sessionId,
+      code: 'IDEMPOTENT',
+    };
   }
 
   // Get story from database
