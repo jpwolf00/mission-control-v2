@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireIdempotencyKey } from '@/api/v1/idempotency';
-import { completeSession, getSession } from '@/services/dispatch-service';
+import { completeSession, getSession, autoDispatchNextGate } from '@/services/dispatch-service';
 import { getStoryByIdFromDB, saveGateCompletion, updateStoryStatus } from '@/services/story-store-db';
+import type { Gate } from '@/domain/workflow-types';
 
 type CallbackEvent = 'completed' | 'failed' | 'heartbeat';
 
@@ -77,7 +78,22 @@ export async function POST(request: NextRequest) {
         // Always release lock/session state after callback processing.
         completeSession(sessionId);
 
-        console.log(`[agent-callback] Session ${sessionId} completed by ${agentId} (${role}). Evidence items: ${evidence?.length || 0}`);
+        // Auto-dispatch to next gate if not the final gate
+        let autoDispatchResult: { attempted: boolean; success?: boolean; nextGate?: string; sessionId?: string; error?: string; reason?: string } = { attempted: false };
+        
+        if (!existingApproved) {
+          const dispatchResult = await autoDispatchNextGate(session.storyId, session.gate as Gate);
+          autoDispatchResult = {
+            attempted: true,
+            success: dispatchResult.success,
+            ...(dispatchResult.nextGate && { nextGate: dispatchResult.nextGate }),
+            ...(dispatchResult.sessionId && { sessionId: dispatchResult.sessionId }),
+            ...(dispatchResult.error && { error: dispatchResult.error }),
+            ...(dispatchResult.reason && { reason: dispatchResult.reason }),
+          };
+        }
+
+        console.log(`[agent-callback] Session ${sessionId} completed by ${agentId} (${role}). Evidence items: ${evidence?.length || 0}. Auto-dispatch: ${autoDispatchResult.attempted ? JSON.stringify(autoDispatchResult) : 'skipped'}`);
         return NextResponse.json({
           status: 'completed',
           sessionId,
@@ -86,8 +102,7 @@ export async function POST(request: NextRequest) {
           message: existingApproved
             ? 'Session completed, gate already approved (idempotent)'
             : 'Session completed and gate approved',
-          // NOTE: auto-dispatch intentionally not performed here to avoid recursive dispatch loops.
-          autoDispatch: { attempted: false, reason: 'disabled-in-callback-safety' },
+          autoDispatch: autoDispatchResult,
         });
       }
 

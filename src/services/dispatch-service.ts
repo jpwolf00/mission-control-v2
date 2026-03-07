@@ -1,7 +1,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import { getStoryByIdFromDB } from './story-store-db';
 import { acquireLock, releaseLock } from './lock-service';
-import { Gate } from '@/domain/workflow-types';
+import { Gate, GATES } from '@/domain/workflow-types';
 import { triggerAgent, gateToRole } from './openclaw-client';
 
 interface DispatchResult {
@@ -122,4 +122,69 @@ export function completeSession(sessionId: string) {
     releaseLock(session.storyId, session.gate as Gate, sessionId);
     activeSessions.delete(sessionId);
   }
+}
+
+/**
+ * Get the next gate in the workflow sequence.
+ * Returns null if the current gate is the final gate (reviewer-b).
+ */
+export function getNextGate(currentGate: Gate): Gate | null {
+  const idx = GATES.indexOf(currentGate);
+  if (idx < 0 || idx === GATES.length - 1) {
+    return null;
+  }
+  return GATES[idx + 1];
+}
+
+/**
+ * Auto-dispatch to the next gate after a gate completes.
+ * Returns the result of the dispatch attempt.
+ */
+export async function autoDispatchNextGate(
+  storyId: string,
+  completedGate: Gate
+): Promise<{
+  success: boolean;
+  nextGate?: Gate;
+  sessionId?: string;
+  error?: string;
+  reason?: string;
+}> {
+  const nextGate = getNextGate(completedGate);
+  
+  if (!nextGate) {
+    // Final gate completed, no auto-dispatch needed
+    return {
+      success: true,
+      reason: 'final_gate_completed',
+    };
+  }
+
+  console.log(`[auto-dispatch] Story ${storyId}: ${completedGate} completed, dispatching ${nextGate}`);
+
+  // Generate idempotency key for auto-dispatch
+  const idempotencyKey = `auto-dispatch-${storyId}-${nextGate}-${Date.now()}`;
+
+  const dispatchResult = await dispatchStory(storyId, nextGate, idempotencyKey);
+
+  if (!dispatchResult.success) {
+    console.error(
+      `[auto-dispatch] Story ${storyId}: failed to dispatch ${nextGate}: ${dispatchResult.error}`
+    );
+    return {
+      success: false,
+      nextGate,
+      error: dispatchResult.error,
+    };
+  }
+
+  console.log(
+    `[auto-dispatch] Story ${storyId}: successfully dispatched ${nextGate} with session ${dispatchResult.sessionId}`
+  );
+
+  return {
+    success: true,
+    nextGate,
+    sessionId: dispatchResult.sessionId,
+  };
 }
