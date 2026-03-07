@@ -70,14 +70,20 @@ async function dispatchStory(story) {
 
 async function tick() {
   const storiesRes = await fetchJson(`${APP_URL}/api/v1/stories`);
-  if (!storiesRes.ok || !Array.isArray(storiesRes.json)) {
+  if (!storiesRes.ok) {
     console.warn(
       `[orchestrator] stories fetch failed status=${storiesRes.status} body=${storiesRes.text?.slice(0, 200)}`
     );
     return;
   }
 
-  const stories = storiesRes.json;
+  // API returns { stories: [...] } or array directly depending on version
+  const raw = storiesRes.json;
+  const stories = Array.isArray(raw) ? raw : (raw?.stories || []);
+  if (!Array.isArray(stories)) {
+    console.warn(`[orchestrator] unexpected stories response shape`);
+    return;
+  }
   const eligible = stories.filter(isEligible);
   for (const story of eligible) {
     // eslint-disable-next-line no-await-in-loop
