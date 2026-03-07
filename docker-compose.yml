@@ -20,6 +20,9 @@ services:
     environment:
       DATABASE_URL: postgresql://mc2:mc2password@db:5432/mission_control
       NODE_ENV: production
+      OPENCLAW_GATEWAY_URL: ${OPENCLAW_GATEWAY_URL}
+      OPENCLAW_GATEWAY_TOKEN: ${OPENCLAW_GATEWAY_TOKEN}
+      APP_URL: ${APP_URL}
     depends_on:
       db:
         condition: service_healthy
