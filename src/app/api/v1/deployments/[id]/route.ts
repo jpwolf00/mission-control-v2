@@ -6,6 +6,7 @@ import {
   initiateRollback,
   runVerification,
 } from '@/services/deploy-control';
+import { getStoryByIdFromDB } from '@/services/story-store-db';
 
 export async function GET(
   request: NextRequest,
@@ -69,12 +70,39 @@ export async function PATCH(
           comment: actionParams.comment,
         });
         break;
-      case 'start':
+      case 'start': {
+        const story = await getStoryByIdFromDB(deployment.storyId);
+        if (!story) {
+          return NextResponse.json(
+            { error: 'Deploy blocked: linked story not found' },
+            { status: 404 }
+          );
+        }
+
+        const reviewerAApproved = (story.gates || []).some((g) => g.gate === 'reviewer-a' && g.status === 'approved');
+        if (!reviewerAApproved) {
+          return NextResponse.json(
+            { error: 'Deploy blocked: reviewer-a approval required before deployment start', code: 'REVIEW_REQUIRED' },
+            { status: 409 }
+          );
+        }
+
+        if (
+          deployment.targetEnvironment === 'production' &&
+          !String(actionParams.startedBy || '').toLowerCase().includes('operator')
+        ) {
+          return NextResponse.json(
+            { error: 'Deploy blocked: production deployments must be started by operator role', code: 'OPERATOR_REQUIRED' },
+            { status: 403 }
+          );
+        }
+
         result = startDeployment({
           deploymentId: id,
           startedBy: actionParams.startedBy,
         });
         break;
+      }
       case 'rollback':
         result = initiateRollback({
           deploymentId: id,
@@ -95,6 +123,13 @@ export async function PATCH(
           { error: `Unknown action: ${action}` },
           { status: 422 }
         );
+    }
+
+    if (!result) {
+      return NextResponse.json(
+        { error: `Action '${action}' could not be applied for deployment in current state` },
+        { status: 409 }
+      );
     }
 
     return NextResponse.json(result);

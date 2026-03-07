@@ -27,6 +27,17 @@ const statusChipColors: Record<StoryStatus, { bg: string; text: string }> = {
 
 export function StoryCard({ story, onClick, onDispatch, onApprove }: StoryCardProps) {
   const chipColor = statusChipColors[story.status] || statusChipColors.draft;
+  const implementerApproved = (story.gates || []).some((g) => g.gate === 'implementer' && g.status === 'approved');
+  const reviewerAApproved = (story.gates || []).some((g) => g.gate === 'reviewer-a' && g.status === 'approved');
+
+  let phaseLabel: string | null = null;
+  if (story.status === 'active' && implementerApproved && !reviewerAApproved) {
+    phaseLabel = 'Implemented, pending review';
+  } else if (story.status === 'active' && story.currentGate === 'operator') {
+    phaseLabel = 'Approved in review, pending operator deploy';
+  } else if (story.status === 'active' && story.currentGate === 'reviewer-b') {
+    phaseLabel = 'Deployed, pending final production verification';
+  }
 
   return (
     <Card
@@ -78,9 +89,12 @@ export function StoryCard({ story, onClick, onDispatch, onApprove }: StoryCardPr
         >
           {story.metadata.description}
         </Typography>
-        <Box display="flex" justifyContent="space-between" alignItems="center">
+        <Box display="flex" justifyContent="space-between" alignItems="center" sx={{ mb: phaseLabel ? 0.75 : 0 }}>
           <Typography variant="caption" color="text.secondary">
             {story.metadata.priority?.toUpperCase() || 'MEDIUM'}
+          </Typography>
+           <Typography variant="caption" color="text.secondary">
+            Gate: {story.currentGate || '-'}
           </Typography>
           <Box display="flex" gap={0.5}>
             {(story.status === 'draft' || story.status === 'pending_approval') && onApprove && (
@@ -110,6 +124,11 @@ export function StoryCard({ story, onClick, onDispatch, onApprove }: StoryCardPr
             )}
           </Box>
         </Box>
+        {phaseLabel && (
+          <Typography variant="caption" sx={{ color: '#0f766e', fontWeight: 600 }}>
+            {phaseLabel}
+          </Typography>
+        )}
       </CardContent>
     </Card>
   );

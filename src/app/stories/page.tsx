@@ -66,6 +66,10 @@ export default function StoriesPage() {
       });
       const data = await response.json();
       if (!response.ok) {
+        if (response.status === 409 && data?.code === 'CONFLICT') {
+          setSnackbar({ open: true, message: `Already in progress: "${story.metadata.title}" has an active ${gate} session`, severity: 'success' });
+          return;
+        }
         throw new Error(data.error || 'Failed to dispatch story');
       }
       setSnackbar({ open: true, message: `Dispatched "${story.metadata.title}" to ${gate}`, severity: 'success' });
