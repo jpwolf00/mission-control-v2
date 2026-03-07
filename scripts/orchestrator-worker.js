@@ -3,6 +3,10 @@
 const APP_URL = process.env.ORCHESTRATOR_APP_URL || process.env.APP_URL || 'http://app:3000';
 const INTERVAL_MS = Number(process.env.ORCHESTRATOR_INTERVAL_MS || 10000);
 const START_DELAY_MS = Number(process.env.ORCHESTRATOR_START_DELAY_MS || 5000);
+const DISPATCH_COOLDOWN_MS = Number(process.env.ORCHESTRATOR_DISPATCH_COOLDOWN_MS || 120000);
+
+// In-memory per-process cooldown to avoid hot-loop redispatch spam.
+const lastDispatchAttemptAt = new Map();
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -42,6 +46,14 @@ function isEligible(story) {
 
 async function dispatchStory(story) {
   const gate = story.currentGate;
+  const key = `${story.id}:${gate}`;
+  const now = Date.now();
+  const last = lastDispatchAttemptAt.get(key) || 0;
+  if (now - last < DISPATCH_COOLDOWN_MS) {
+    return;
+  }
+  lastDispatchAttemptAt.set(key, now);
+
   const idempotencyKey = `orchestrator:${story.id}:${gate}`;
   const result = await fetchJson(`${APP_URL}/api/v1/orchestration/dispatch`, {
     method: 'POST',
