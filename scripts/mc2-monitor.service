@@ -1,0 +1,19 @@
+[Unit]
+Description=Mission Control v2 Monitor
+Documentation=file:///Users/jpwolf00/.openclaw/workspace/mission-control-v2/docs/MONITOR-V2-RUNBOOK.md
+After=network.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=jpwolf00
+WorkingDirectory=/Users/jpwolf00/.openclaw/workspace/mission-control-v2
+EnvironmentFile=/etc/mc2-monitor.env
+ExecStart=/usr/bin/python3 /Users/jpwolf00/.openclaw/workspace/mission-control-v2/scripts/monitor.py
+Restart=on-failure
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
