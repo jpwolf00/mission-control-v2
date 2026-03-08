@@ -10,7 +10,8 @@ RUN npm install prisma@5.22.0 @prisma/client@5.22.0
 # Build
 FROM base AS builder
 WORKDIR /app
-COPY --from=deps /app/node_modules ./node_modules
+COPY package.json package-lock.json* ./
+RUN npm ci
 COPY . .
 RUN npx prisma generate
 RUN npm run build
