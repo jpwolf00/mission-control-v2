@@ -8,6 +8,8 @@ const FAILURE_MAX_STREAK = Number(process.env.ORCHESTRATOR_FAILURE_MAX_STREAK ||
 const RETRY_BACKOFF_BASE_MS = Number(process.env.ORCHESTRATOR_RETRY_BACKOFF_BASE_MS || 120000);
 const RETRY_BACKOFF_MAX_MS = Number(process.env.ORCHESTRATOR_RETRY_BACKOFF_MAX_MS || 1800000);
 const CIRCUIT_OPEN_MS = Number(process.env.ORCHESTRATOR_CIRCUIT_OPEN_MS || 900000);
+const MC2_GLOBAL_BREAKER_ENABLED = (process.env.MC2_GLOBAL_BREAKER_ENABLED || 'false').toLowerCase() === 'true';
+const MC2_MIN_DISPATCH_INTERVAL_MS = Number(process.env.MC2_MIN_DISPATCH_INTERVAL_MS || 5000);
 
 /**
  * Per story+gate dispatch state to prevent infinite churn loops.
@@ -83,9 +85,10 @@ async function dispatchStory(story) {
     return;
   }
 
-  const backoffMs = state.consecutiveFailures > 0
+  const computedBackoffMs = state.consecutiveFailures > 0
     ? Math.min(RETRY_BACKOFF_MAX_MS, RETRY_BACKOFF_BASE_MS * (2 ** (state.consecutiveFailures - 1)))
     : DISPATCH_COOLDOWN_MS;
+  const backoffMs = Math.max(computedBackoffMs, MC2_MIN_DISPATCH_INTERVAL_MS);
 
   if (now - state.lastAttemptAt < backoffMs) {
     dispatchState.set(key, state);
@@ -148,6 +151,11 @@ async function dispatchStory(story) {
 }
 
 async function tick() {
+  if (MC2_GLOBAL_BREAKER_ENABLED) {
+    console.warn('[orchestrator] global breaker enabled; skipping dispatch tick');
+    return;
+  }
+
   const storiesRes = await fetchJson(`${APP_URL}/api/v1/stories`);
   if (!storiesRes.ok) {
     console.warn(
@@ -171,7 +179,7 @@ async function tick() {
 }
 
 async function main() {
-  console.log(`[orchestrator] starting. app=${APP_URL} intervalMs=${INTERVAL_MS}`);
+  console.log(`[orchestrator] starting. app=${APP_URL} intervalMs=${INTERVAL_MS} globalBreaker=${MC2_GLOBAL_BREAKER_ENABLED}`);
   await sleep(START_DELAY_MS);
 
   // Loop forever. Any tick error is logged and loop continues.

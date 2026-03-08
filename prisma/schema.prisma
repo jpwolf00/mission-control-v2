@@ -56,20 +56,30 @@ model RunSession {
   storyId   String   @map("story_id")
   gate      String
   status    String   @default("pending")
-  
+
+  // Session safety + accounting
+  idempotencyKey      String?  @unique @map("idempotency_key")
+  provider            String?
+  model               String?
+  dispatchAttempts    Int      @default(0) @map("dispatch_attempts")
+  estimatedInvocations Int     @default(0) @map("estimated_invocations")
+  actualInvocations   Int      @default(0) @map("actual_invocations")
+  parentSessionId     String?  @map("parent_session_id")
+
   // Session tracking
   startedAt DateTime? @map("started_at")
   endedAt   DateTime? @map("ended_at")
   lastHeartbeatAt DateTime? @map("last_heartbeat_at")
-  
+
   metadata  Json?
-  
+
   story     Story    @relation(fields: [storyId], references: [id], onDelete: Cascade)
-  
+
   createdAt DateTime @default(now()) @map("created_at")
 
   @@map("run_sessions")
   @@index([storyId])
+  @@index([storyId, gate, status])
 }
 
 model StoryEvent {

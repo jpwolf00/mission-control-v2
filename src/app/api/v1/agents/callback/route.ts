@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify session exists
-    const session = getSession(sessionId);
+    const session = await getSession(sessionId);
     if (!session) {
       return NextResponse.json(
         { error: `Session not found: ${sessionId}` },
@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
       case 'completed': {
         const story = await getStoryByIdFromDB(session.storyId);
         if (!story) {
-          completeSession(sessionId);
+          await completeSession(sessionId, 'failed');
           return NextResponse.json(
             { error: `Story not found for session: ${session.storyId}` },
             { status: 404 }
@@ -91,7 +91,7 @@ export async function POST(request: NextRequest) {
         }
 
         // Release lock/session state after persistence + auto-dispatch attempt.
-        completeSession(sessionId);
+        await completeSession(sessionId, 'completed');
 
         console.log(`[agent-callback] Session ${sessionId} completed by ${agentId} (${role}). Evidence items: ${evidence?.length || 0}. Auto-dispatch: ${autoDispatchResult.attempted ? JSON.stringify(autoDispatchResult) : 'skipped'}`);
         return NextResponse.json({
@@ -117,7 +117,7 @@ export async function POST(request: NextRequest) {
           await updateStoryStatus(session.storyId, 'blocked');
         }
 
-        completeSession(sessionId);
+        await completeSession(sessionId, 'failed');
         console.log(`[agent-callback] Session ${sessionId} failed. Agent: ${agentId}, Error: ${agentError}`);
         return NextResponse.json({
           status: 'failed',

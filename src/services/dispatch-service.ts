@@ -3,6 +3,7 @@ import { getStoryByIdFromDB } from './story-store-db';
 import { acquireLock, releaseLock } from './lock-service';
 import { Gate, GATES } from '@/domain/workflow-types';
 import { triggerAgent, gateToRole } from './openclaw-client';
+import { prisma } from '@/lib/prisma';
 
 interface DispatchResult {
   success: boolean;
@@ -11,13 +12,6 @@ interface DispatchResult {
   code?: string;
 }
 
-const activeSessions = new Map<string, {
-  storyId: string;
-  gate: string;
-  startedAt: Date;
-  idempotencyKey: string;
-}>();
-
 const ACTIVE_SESSION_TTL_MS = Number(process.env.ACTIVE_SESSION_TTL_MS || 15 * 60 * 1000);
 
 export async function dispatchStory(
@@ -25,23 +19,35 @@ export async function dispatchStory(
   gate: string,
   idempotencyKey: string
 ): Promise<DispatchResult> {
-  // Check for existing session with same idempotency key.
-  // If it is stale, expire and allow fresh dispatch.
-  for (const [sessionId, session] of activeSessions) {
-    if (session.idempotencyKey !== idempotencyKey) continue;
+  // DB-backed idempotency: if we already saw this key, return existing session.
+  const existingByKey = await prisma.runSession.findFirst({
+    where: { idempotencyKey },
+    orderBy: { createdAt: 'desc' },
+  });
 
-    const ageMs = Date.now() - session.startedAt.getTime();
-    if (ageMs > ACTIVE_SESSION_TTL_MS) {
-      console.warn(
-        `[dispatch] Expiring stale session ${sessionId} for story=${session.storyId} gate=${session.gate} ageMs=${ageMs}`
-      );
-      completeSession(sessionId);
-      continue;
-    }
-
+  if (existingByKey) {
     return {
       success: true,
-      sessionId,
+      sessionId: existingByKey.id,
+      code: 'IDEMPOTENT',
+    };
+  }
+
+  // Also guard against active session for same story/gate in TTL window.
+  const activeSameGate = await prisma.runSession.findFirst({
+    where: {
+      storyId,
+      gate,
+      status: 'active',
+      startedAt: { gte: new Date(Date.now() - ACTIVE_SESSION_TTL_MS) },
+    },
+    orderBy: { startedAt: 'desc' },
+  });
+
+  if (activeSameGate) {
+    return {
+      success: true,
+      sessionId: activeSameGate.id,
       code: 'IDEMPOTENT',
     };
   }
@@ -89,12 +95,20 @@ export async function dispatchStory(
     };
   }
 
-  // Create session
-  activeSessions.set(sessionId, {
-    storyId,
-    gate,
-    startedAt: new Date(),
-    idempotencyKey,
+  // Persist session before external dispatch.
+  await prisma.runSession.create({
+    data: {
+      id: sessionId,
+      storyId,
+      gate,
+      status: 'active',
+      startedAt: new Date(),
+      idempotencyKey,
+      dispatchAttempts: 1,
+      metadata: {
+        gateRole: gateToRole(gateTyped),
+      },
+    },
   });
 
   // Trigger Openclaw agent for this gate
@@ -107,9 +121,18 @@ export async function dispatchStory(
   });
 
   if (!triggerResult.success) {
-    // Roll back lock + in-memory session so dispatch does not report false success
+    // Roll back lock + mark session failed so it is visible in DB.
     releaseLock(storyId, gateTyped, sessionId);
-    activeSessions.delete(sessionId);
+    await prisma.runSession.update({
+      where: { id: sessionId },
+      data: {
+        status: 'failed',
+        endedAt: new Date(),
+        metadata: {
+          triggerError: triggerResult.error || 'Failed to trigger OpenClaw agent',
+        },
+      },
+    });
 
     return {
       success: false,
@@ -124,15 +147,21 @@ export async function dispatchStory(
   };
 }
 
-export function getSession(sessionId: string) {
-  return activeSessions.get(sessionId);
+export async function getSession(sessionId: string) {
+  return prisma.runSession.findUnique({ where: { id: sessionId } });
 }
 
-export function completeSession(sessionId: string) {
-  const session = activeSessions.get(sessionId);
+export async function completeSession(sessionId: string, status: 'completed' | 'failed' | 'cancelled' = 'completed') {
+  const session = await prisma.runSession.findUnique({ where: { id: sessionId } });
   if (session) {
     releaseLock(session.storyId, session.gate as Gate, sessionId);
-    activeSessions.delete(sessionId);
+    await prisma.runSession.update({
+      where: { id: sessionId },
+      data: {
+        status,
+        endedAt: new Date(),
+      },
+    });
   }
 }
 
@@ -163,7 +192,7 @@ export async function autoDispatchNextGate(
   reason?: string;
 }> {
   const nextGate = getNextGate(completedGate);
-  
+
   if (!nextGate) {
     // Final gate completed, no auto-dispatch needed
     return {
@@ -174,7 +203,7 @@ export async function autoDispatchNextGate(
 
   console.log(`[auto-dispatch] Story ${storyId}: ${completedGate} completed, dispatching ${nextGate}`);
 
-  // Generate idempotency key for auto-dispatch
+  // Stable idempotency key for auto-dispatch.
   const idempotencyKey = `auto-dispatch-${storyId}-${nextGate}`;
 
   const dispatchResult = await dispatchStory(storyId, nextGate, idempotencyKey);
