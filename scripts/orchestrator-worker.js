@@ -5,7 +5,6 @@ const INTERVAL_MS = Number(process.env.ORCHESTRATOR_INTERVAL_MS || 10000);
 const START_DELAY_MS = Number(process.env.ORCHESTRATOR_START_DELAY_MS || 5000);
 const DISPATCH_COOLDOWN_MS = Number(process.env.ORCHESTRATOR_DISPATCH_COOLDOWN_MS || 120000);
 const FAILURE_MAX_STREAK = Number(process.env.ORCHESTRATOR_FAILURE_MAX_STREAK || 5);
-const IDEMPOTENT_MAX_STREAK = Number(process.env.ORCHESTRATOR_IDEMPOTENT_MAX_STREAK || 10);
 const RETRY_BACKOFF_BASE_MS = Number(process.env.ORCHESTRATOR_RETRY_BACKOFF_BASE_MS || 120000);
 const RETRY_BACKOFF_MAX_MS = Number(process.env.ORCHESTRATOR_RETRY_BACKOFF_MAX_MS || 1800000);
 const CIRCUIT_OPEN_MS = Number(process.env.ORCHESTRATOR_CIRCUIT_OPEN_MS || 900000);
@@ -49,7 +48,14 @@ function isEligible(story) {
   const alreadyApproved = (story.gates || []).some(
     (g) => g.gate === currentGate && g.status === 'approved'
   );
-  return !alreadyApproved;
+
+  // Gate completed: clear any stale orchestrator streak/circuit state for this story+gate.
+  if (alreadyApproved) {
+    dispatchState.delete(`${story.id}:${currentGate}`);
+    return false;
+  }
+
+  return true;
 }
 
 async function dispatchStory(story) {
@@ -60,7 +66,6 @@ async function dispatchStory(story) {
   const state = dispatchState.get(key) || {
     lastAttemptAt: 0,
     consecutiveFailures: 0,
-    consecutiveIdempotent: 0,
     blockedUntil: 0,
     lastStoryUpdatedAt: null,
   };
@@ -69,7 +74,6 @@ async function dispatchStory(story) {
   const storyUpdatedAt = story.updatedAt || null;
   if (state.lastStoryUpdatedAt && storyUpdatedAt && state.lastStoryUpdatedAt !== storyUpdatedAt) {
     state.consecutiveFailures = 0;
-    state.consecutiveIdempotent = 0;
     state.blockedUntil = 0;
   }
   state.lastStoryUpdatedAt = storyUpdatedAt;
@@ -106,19 +110,14 @@ async function dispatchStory(story) {
     const code = result.json?.code;
 
     if (code === 'IDEMPOTENT') {
-      state.consecutiveIdempotent += 1;
-      if (state.consecutiveIdempotent >= IDEMPOTENT_MAX_STREAK) {
-        state.blockedUntil = Date.now() + CIRCUIT_OPEN_MS;
-        console.warn(
-          `[orchestrator] circuit-open (idempotent churn) story=${story.id} gate=${gate} session=${sessionId} forMs=${CIRCUIT_OPEN_MS}`
-        );
-      }
+      // Expected: an active session already exists. Do not count toward circuit-breaks.
+      state.consecutiveFailures = 0;
+      state.blockedUntil = 0;
       dispatchState.set(key, state);
       return;
     }
 
     state.consecutiveFailures = 0;
-    state.consecutiveIdempotent = 0;
     state.blockedUntil = 0;
     dispatchState.set(key, state);
     console.log(`[orchestrator] dispatched story=${story.id} gate=${gate} session=${sessionId}`);
@@ -126,14 +125,10 @@ async function dispatchStory(story) {
   }
 
   // Expected/benign states for periodic orchestrator ticks.
+  // Do not count these toward circuit-breaking.
   if ([409, 412].includes(result.status)) {
-    state.consecutiveIdempotent += 1;
-    if (state.consecutiveIdempotent >= IDEMPOTENT_MAX_STREAK) {
-      state.blockedUntil = Date.now() + CIRCUIT_OPEN_MS;
-      console.warn(
-        `[orchestrator] circuit-open (conflict churn) story=${story.id} gate=${gate} status=${result.status} forMs=${CIRCUIT_OPEN_MS}`
-      );
-    }
+    state.consecutiveFailures = 0;
+    state.blockedUntil = 0;
     dispatchState.set(key, state);
     return;
   }
