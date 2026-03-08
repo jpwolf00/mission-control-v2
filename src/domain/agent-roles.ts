@@ -5,6 +5,7 @@
 
 export type AgentRoleId = 
   | 'architect' 
+  | 'ui-designer'
   | 'implementer' 
   | 'reviewer-a' 
   | 'operator' 

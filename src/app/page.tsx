@@ -103,7 +103,7 @@ export default function DashboardPage() {
             titleTypographyProps={{ variant: 'h6', fontSize: '1rem' }}
           />
           <CardContent>
-            {['architect', 'implementer', 'reviewer-a', 'operator', 'reviewer-b'].map((gate, i) => (
+            {['architect', 'ui-designer', 'implementer', 'reviewer-a', 'operator', 'reviewer-b'].map((gate, i) => (
               <Box key={gate}>
                 {i > 0 && <Divider sx={{ my: 1 }} />}
                 <Box display="flex" justifyContent="space-between" alignItems="center" py={0.5}>

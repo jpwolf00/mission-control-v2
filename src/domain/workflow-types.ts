@@ -1,5 +1,6 @@
 export const GATES = [
   "architect",
+  "ui-designer",
   "implementer",
   "reviewer-a",
   "operator",

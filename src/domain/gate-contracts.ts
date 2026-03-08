@@ -59,6 +59,12 @@ export const GATE_REQUIREMENTS: Record<Gate, GateRequirements> = {
     allowManualOverride: true,
     autoApproveOnComplete: false
   },
+  "ui-designer": {
+    requiredEvidence: ["documentation"],
+    minEvidenceCount: 1,
+    allowManualOverride: true,
+    autoApproveOnComplete: true
+  },
   implementer: {
     requiredEvidence: ["code_change", "test_result"],
     minEvidenceCount: 2,

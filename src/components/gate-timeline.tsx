@@ -11,10 +11,11 @@ interface GateTimelineProps {
   failedGates?: Gate[];
 }
 
-const gates: Gate[] = ['architect', 'implementer', 'reviewer-a', 'operator', 'reviewer-b'];
+const gates: Gate[] = ['architect', 'ui-designer', 'implementer', 'reviewer-a', 'operator', 'reviewer-b'];
 
 const gateLabels: Record<Gate, string> = {
   architect: 'Design',
+  'ui-designer': 'UX Review',
   implementer: 'Build',
   'reviewer-a': 'Review',
   operator: 'Deploy',

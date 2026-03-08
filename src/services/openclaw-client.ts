@@ -25,6 +25,7 @@ export function gateToRole(gate: Gate): string {
   const mapping: Record<Gate, string> = {
     'architect': 'architect',
     'implementer': 'implementer',
+    'ui-designer': 'ui-designer',
     'reviewer-a': 'reviewer-a',
     'operator': 'operator',
     'reviewer-b': 'reviewer-b',
@@ -41,7 +42,7 @@ export function gateToRole(gate: Gate): string {
  * Requires OpenClaw gateway config:
  *   hooks.enabled: true
  *   hooks.token: <OPENCLAW_HOOK_TOKEN>  (must differ from gateway auth token)
- *   hooks.allowedAgentIds: ["architect","implementer","reviewer-a","operator","reviewer-b"]
+ *   hooks.allowedAgentIds: ["architect","ui-designer","implementer","reviewer-a","operator","reviewer-b"]
  *
  * MC2 env: OPENCLAW_HOOK_TOKEN (falls back to OPENCLAW_GATEWAY_TOKEN if not set)
  *
@@ -93,6 +94,9 @@ export async function triggerAgent(config: TriggerAgentConfig): Promise<TriggerR
     `- **Session ID**: ${sessionId}`,
     `- **Description**: ${context.story.metadata.description}`,
     criteria ? `- **Acceptance Criteria**:\n- ${criteria}` : '',
+    role === 'ui-designer'
+      ? `- **UX Gate Rule**: If this story has no frontend/UI scope, return a fast pass with evidence like {"type":"no_ux_review_needed","summary":"No frontend/UI changes required for this story."} and complete callback immediately.`
+      : '',
     ``,
     `## Working Context`,
     `- Canonical repository path: /Users/jpwolf00/.openclaw/workspace/mission-control-v2`,

@@ -24,6 +24,25 @@ export const AGENT_ROLES: Record<string, AgentRole> = {
     evidenceRequirements: ['SPEC.md exists'],
   },
   
+  'ui-designer': {
+    id: 'ui-designer',
+    name: 'UX Designer',
+    description: 'Frontend/UX scope validation and design guidance',
+    gates: ['ui-designer'],
+    permissions: [
+      { tool: 'read', action: 'allow' },
+      { tool: 'write', action: 'scoped', scope: 'docs/' },
+      { tool: 'edit', action: 'scoped', scope: 'docs/' },
+      { tool: 'browser', action: 'allow' },
+      { tool: 'web_search', action: 'allow' },
+      { tool: 'web_fetch', action: 'allow' },
+      { tool: 'exec', action: 'deny' },
+      { tool: 'sessions_spawn', action: 'deny' },
+      { tool: 'subagents', action: 'deny' },
+    ],
+    evidenceRequirements: ['UI scope assessed (or explicitly waived)'],
+  },
+
   implementer: {
     id: 'implementer',
     name: 'Implementer',
