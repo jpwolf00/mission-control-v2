@@ -312,16 +312,27 @@ export function AttachmentUpload({
                 />
                 <ListItemSecondaryAction>
                   <Box sx={{ display: 'flex', gap: 1 }}>
-                    <IconButton
-                      edge="end"
-                      size="small"
-                      href={attachment.googleDriveUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      title="Open in Google Drive"
-                    >
-                      <LinkIcon />
-                    </IconButton>
+                    {attachment.googleDriveUrl ? (
+                      <IconButton
+                        edge="end"
+                        size="small"
+                        href={attachment.googleDriveUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        title="Open in Google Drive"
+                      >
+                        <LinkIcon />
+                      </IconButton>
+                    ) : (
+                      <IconButton
+                        edge="end"
+                        size="small"
+                        href={`/api/v1/stories/${storyId}/attachments/${attachment.id}/download`}
+                        title="Download file"
+                      >
+                        <FileIcon />
+                      </IconButton>
+                    )}
                     {!readOnly && (
                       <IconButton
                         edge="end"

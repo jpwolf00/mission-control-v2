@@ -37,29 +37,38 @@ async function ensureStorageDirectory(): Promise<void> {
 }
 
 /**
- * Upload file to Google Drive using gog CLI
+ * Upload file to Google Drive using gog CLI (optional, graceful degradation)
  */
 async function uploadToGoogleDrive(
   localPath: string,
   filename: string,
   mimeType: string
-): Promise<{ fileId: string; fileUrl: string }> {
+): Promise<{ fileId: string; fileUrl: string } | null> {
   try {
+    // Skip if gog CLI is not available (e.g., in Docker container)
+    try {
+      await execAsync('which gog');
+    } catch {
+      console.log('[attachment-service] gog CLI not available, skipping Google Drive upload');
+      return null;
+    }
+
     // Use gog CLI to upload file
     const { stdout } = await execAsync(
       `gog drive upload "${localPath}" --name "${sanitizeFilename(filename)}" --json`
     );
-    
+
     const result = JSON.parse(stdout);
-    
+
     // Extract file ID and construct URL
     const fileId = result.id || result.fileId;
     const fileUrl = `https://drive.google.com/file/d/${fileId}/view`;
-    
+
     return { fileId, fileUrl };
   } catch (error) {
     console.error('[attachment-service] Google Drive upload failed:', error);
-    throw new Error('Failed to upload file to Google Drive');
+    // Graceful degradation: return null so local-only storage works
+    return null;
   }
 }
 
@@ -129,15 +138,18 @@ export async function createAttachment(
   
   // Save to local storage
   const localPath = await saveToLocalStorage(fileBuffer, uniqueFilename);
-  
-  // Upload to Google Drive
-  const { fileId: googleDriveFileId, fileUrl: googleDriveUrl } = await uploadToGoogleDrive(
+
+  // Upload to Google Drive (optional, graceful degradation)
+  const driveResult = await uploadToGoogleDrive(
     localPath,
     input.originalName,
     input.mimeType
   );
 
-  // Create database record
+  const fallbackFileId = `local:${uniqueFilename}`;
+  const fallbackFileUrl = 'local://stored';
+
+  // Create database record (always provide a URL; use local fallback if Drive unavailable)
   const attachment = await prisma.storyAttachment.create({
     data: {
       id: uuidv4(),
@@ -147,8 +159,8 @@ export async function createAttachment(
       mimeType: input.mimeType,
       size: input.size,
       localPath,
-      googleDriveFileId,
-      googleDriveUrl,
+      googleDriveFileId: driveResult?.fileId || fallbackFileId,
+      googleDriveUrl: driveResult?.fileUrl || fallbackFileUrl,
       uploadedBy: input.uploadedBy,
       description: input.description,
     },
@@ -279,13 +291,14 @@ function mapPrismaToDomain(prismaAttachment: any): StoryAttachment {
  * Map Prisma attachment to metadata (for API responses - excludes paths)
  */
 function mapPrismaToMetadata(prismaAttachment: any): AttachmentMetadata {
+  const isLocalOnly = String(prismaAttachment.googleDriveFileId || '').startsWith('local:');
   return {
     id: prismaAttachment.id,
     filename: prismaAttachment.filename,
     originalName: prismaAttachment.originalName,
     mimeType: prismaAttachment.mimeType,
     size: prismaAttachment.size,
-    googleDriveUrl: prismaAttachment.googleDriveUrl,
+    googleDriveUrl: isLocalOnly ? undefined : (prismaAttachment.googleDriveUrl ?? undefined),
     description: prismaAttachment.description,
     createdAt: prismaAttachment.createdAt,
   };
