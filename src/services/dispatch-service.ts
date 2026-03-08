@@ -65,6 +65,18 @@ export async function dispatchStory(
     };
   }
 
+  // Server-side guard: do not dispatch already-approved gates
+  const gateAlreadyApproved = (story.gates || []).some(
+    (g) => g.gate === gate && g.status === 'approved'
+  );
+  if (gateAlreadyApproved) {
+    return {
+      success: false,
+      error: `Gate already completed: ${gate}`,
+      code: 'ALREADY_COMPLETED',
+    };
+  }
+
   // Generate session ID and acquire lock
   const sessionId = uuidv4();
   const gateTyped = gate as Gate;
@@ -163,7 +175,7 @@ export async function autoDispatchNextGate(
   console.log(`[auto-dispatch] Story ${storyId}: ${completedGate} completed, dispatching ${nextGate}`);
 
   // Generate idempotency key for auto-dispatch
-  const idempotencyKey = `auto-dispatch-${storyId}-${nextGate}-${Date.now()}`;
+  const idempotencyKey = `auto-dispatch-${storyId}-${nextGate}`;
 
   const dispatchResult = await dispatchStory(storyId, nextGate, idempotencyKey);
 

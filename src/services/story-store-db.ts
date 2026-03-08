@@ -94,8 +94,20 @@ export async function saveGateCompletion(data: {
   completedBy: string;
 }): Promise<void> {
   try {
-    await prisma.storyGate.create({
-      data: {
+    await prisma.storyGate.upsert({
+      where: {
+        storyId_gate: {
+          storyId: data.storyId,
+          gate: data.gate,
+        },
+      },
+      update: {
+        status: data.status,
+        evidence: data.evidence as object ?? undefined,
+        completedAt: data.status !== 'pending' ? new Date() : null,
+        completedBy: data.completedBy,
+      },
+      create: {
         id: uuidv4(),
         storyId: data.storyId,
         gate: data.gate,

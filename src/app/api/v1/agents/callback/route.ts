@@ -75,12 +75,9 @@ export async function POST(request: NextRequest) {
           }
         }
 
-        // Always release lock/session state after callback processing.
-        completeSession(sessionId);
-
         // Auto-dispatch to next gate if not the final gate
         let autoDispatchResult: { attempted: boolean; success?: boolean; nextGate?: string; sessionId?: string; error?: string; reason?: string } = { attempted: false };
-        
+
         if (!existingApproved) {
           const dispatchResult = await autoDispatchNextGate(session.storyId, session.gate as Gate);
           autoDispatchResult = {
@@ -92,6 +89,9 @@ export async function POST(request: NextRequest) {
             ...(dispatchResult.reason && { reason: dispatchResult.reason }),
           };
         }
+
+        // Release lock/session state after persistence + auto-dispatch attempt.
+        completeSession(sessionId);
 
         console.log(`[agent-callback] Session ${sessionId} completed by ${agentId} (${role}). Evidence items: ${evidence?.length || 0}. Auto-dispatch: ${autoDispatchResult.attempted ? JSON.stringify(autoDispatchResult) : 'skipped'}`);
         return NextResponse.json({

@@ -41,13 +41,14 @@ model StoryGate {
   evidence  Json?
   completedAt DateTime? @map("completed_at")
   completedBy String?   @map("completed_by")
-  
+
   story     Story    @relation(fields: [storyId], references: [id], onDelete: Cascade)
-  
+
   createdAt DateTime @default(now()) @map("created_at")
 
   @@map("story_gates")
   @@index([storyId])
+  @@unique([storyId, gate])
 }
 
 model RunSession {
