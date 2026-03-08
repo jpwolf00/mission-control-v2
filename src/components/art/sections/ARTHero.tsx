@@ -71,8 +71,7 @@ export function ARTHero() {
                 lineHeight: 1.6,
               }}
             >
-              We transform residential and commercial spaces through 
-              thoughtful art curation and professional installation.
+              We transform ordinary spaces into extraordinary environments through thoughtful art curation and flawless installation. Every piece tells a story—let us help you find yours.
             </Typography>
             <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
               <Button
@@ -80,6 +79,7 @@ export function ARTHero() {
                 href="/art/services"
                 variant="contained"
                 size="large"
+                id="hero-cta-primary"
                 sx={{
                   bgcolor: 'white',
                   color: '#667eea',
@@ -91,13 +91,14 @@ export function ARTHero() {
                   },
                 }}
               >
-                Explore Services
+                Explore Our Services
               </Button>
               <Button
                 component={Link}
-                href="/art/contact"
+                href="/art/projects"
                 variant="outlined"
                 size="large"
+                id="hero-cta-secondary"
                 sx={{
                   borderColor: 'rgba(255,255,255,0.5)',
                   color: 'white',
@@ -110,7 +111,7 @@ export function ARTHero() {
                   },
                 }}
               >
-                Get in Touch
+                View Our Work
               </Button>
             </Box>
           </Grid>

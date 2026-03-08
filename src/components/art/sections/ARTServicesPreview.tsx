@@ -15,7 +15,7 @@ const services = [
   {
     id: 'residential',
     title: 'Residential',
-    description: 'Transform your home with curated artwork that reflects your personal style and enhances your living spaces.',
+    description: 'Transform your home into a personal gallery. We curate artwork that reflects your unique style and creates meaningful connections in every room.',
     icon: Home,
     href: '/art/services/residential',
     placeholderColor: '#667eea',
@@ -24,7 +24,7 @@ const services = [
   {
     id: 'commercial',
     title: 'Commercial',
-    description: 'Create impactful environments for offices, hotels, and retail spaces with professional art curation.',
+    description: 'Make a lasting impression on clients and employees. We design art programs that reinforce your brand identity and elevate your business environment.',
     icon: Building2,
     href: '/art/services/commercial',
     placeholderColor: '#764ba2',
@@ -54,7 +54,7 @@ export function ARTServicesPreview() {
             color="text.secondary"
             sx={{ maxWidth: 600, mx: 'auto', mt: 2 }}
           >
-            From private residences to corporate headquarters, we help clients discover and install artwork that transforms their spaces and tells their story.
+            From private residences to corporate headquarters, we help clients discover and install artwork that transforms their spaces and tells their story. Every curation is tailored to your unique vision.
           </Typography>
         </Box>
 

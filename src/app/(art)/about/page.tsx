@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "About Us - ART Consulting",
-  description: "Learn about ART Consulting's mission to transform spaces through thoughtful art curation. Meet our team of experts.",
+  title: "About Us | ART Consulting - Our Story & Approach",
+  description: "Learn about ART Consulting's mission to transform spaces through thoughtful art curation. Meet our team of expert curators and installation specialists.",
+  keywords: ["art consulting", "about art consultant", "art curation team", "NYC art consultants", "art installation experts"],
 };
 
 import Box from '@mui/material/Box';
@@ -61,12 +62,14 @@ export default function AboutPage() {
               </Typography>
               <Typography variant="body1" color="text.secondary" sx={{ fontSize: '1.1rem', lineHeight: 1.8 }}>
                 Founded in 2015, ART Consulting has been transforming residential and commercial 
-                spaces through thoughtful art curation and professional installation services.
+                spaces through thoughtful art curation and professional installation services. What started 
+                as a passion project has grown into one of New York's most trusted art consulting practices.
               </Typography>
               <Typography variant="body1" color="text.secondary" sx={{ fontSize: '1.1rem', lineHeight: 1.8, mt: 2 }}>
                 We believe that art has the power to transform not just spaces, but lives. 
                 Our team works closely with each client to understand their vision and bring 
-                it to reality with carefully selected pieces from artists around the world.
+                it to reality with carefully selected pieces from artists around the world. Every 
+                project is an opportunity to create something truly meaningful.
               </Typography>
             </Grid>
             <Grid size={{ xs: 12, md: 6 }}>
@@ -115,15 +118,15 @@ export default function AboutPage() {
             {[
               {
                 title: 'Personalized Curation',
-                description: 'Every space is unique. We take the time to understand your style, preferences, and the story you want to tell through art.',
+                description: 'Every space is unique. We take the time to understand your style, preferences, and the story you want to tell through art. No templates—just bespoke selections.',
               },
               {
                 title: 'Quality Artists',
-                description: 'We work with a curated network of established and emerging artists, ensuring each piece meets our high standards.',
+                description: 'We work with a curated network of established and emerging artists, ensuring each piece meets our high standards for craftsmanship and emotional resonance.',
               },
               {
                 title: 'Professional Installation',
-                description: 'Our installation team ensures every piece is displayed safely and beautifully, with attention to lighting and placement.',
+                description: 'Our installation team ensures every piece is displayed safely and beautifully, with careful attention to lighting, placement, and environmental factors.',
               },
             ].map((value, index) => (
               <Grid size={{ xs: 12, md: 4 }} key={index}>

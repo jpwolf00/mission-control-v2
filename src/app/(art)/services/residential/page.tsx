@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Residential Art Consulting - Home Art Curation",
-  description: "Transform your home with our residential art consulting services. Personalized curation, professional installation, and art rotation programs available.",
+  title: "Residential Art Consulting | Home Art Curation | ART Consulting",
+  description: "Transform your home with our residential art consulting services. Personalized curation, professional installation, and art rotation programs for New York homeowners.",
+  keywords: ["residential art consulting", "home art curation", "private residence art", "NYC home art consultant", "art for homes"],
 };
 
 import Box from '@mui/material/Box';
@@ -18,19 +19,19 @@ import { Check, ArrowRight } from 'lucide-react';
 const features = [
   {
     title: 'In-Home Consultation',
-    description: 'We visit your space to understand the architecture, lighting, and existing decor before recommending artwork.',
+    description: 'We visit your space to understand the architecture, lighting, existing decor, and your personal style before recommending any artwork.',
   },
   {
     title: 'Custom Art Sourcing',
-    description: 'Access to thousands of pieces from galleries and artists worldwide, including original works, limited editions, and prints.',
+    description: 'Access to thousands of pieces from galleries and artists worldwide, including original works, limited editions, and rare prints.',
   },
   {
     title: 'Professional Installation',
-    description: 'Our team handles everything from hardware selection to precise hanging, ensuring your art is displayed beautifully and safely.',
+    description: 'Our team handles everything from hardware selection to precise hanging, ensuring your art is displayed beautifully and safely for generations.',
   },
   {
     title: 'Art Rotation Program',
-    description: 'Keep your spaces fresh with our art rotation program, allowing you to swap pieces seasonally or periodically.',
+    description: 'Keep your spaces fresh with our art rotation program, allowing you to swap pieces seasonally or whenever you crave a change.',
   },
 ];
 
@@ -71,7 +72,7 @@ export default function ResidentialServicesPage() {
               <Typography variant="body1" color="text.secondary" sx={{ fontSize: '1.15rem', lineHeight: 1.7, mb: 4 }}>
                 Your home is your sanctuary, and the art within it should reflect your unique personality 
                 and style. We work with homeowners to select and install artwork that transforms living 
-                spaces into personal galleries.
+                spaces into personal galleries that you'll love coming home to.
               </Typography>
               <Button
                 component={Link}

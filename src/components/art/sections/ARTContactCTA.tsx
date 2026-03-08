@@ -61,7 +61,7 @@ export function ARTContactCTA() {
               lineHeight: 1.7,
             }}
           >
-            Whether you're furnishing a new home or redesigning a corporate environment, we'd love to help bring your vision to life.
+            Whether you're furnishing a new home or designing a corporate space, we'd love to help bring your vision to life.
           </Typography>
           
           <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center', mt: 4, flexWrap: 'wrap' }}>
@@ -70,6 +70,7 @@ export function ARTContactCTA() {
               href="/art/contact"
               variant="contained"
               size="large"
+              id="cta-primary"
               sx={{
                 bgcolor: '#fbbf24',
                 color: '#1a1a2e',
@@ -85,9 +86,10 @@ export function ARTContactCTA() {
             </Button>
             <Button
               component={Link}
-              href="/art/about"
+              href="/art/services"
               variant="outlined"
               size="large"
+              id="cta-secondary"
               sx={{
                 borderColor: 'rgba(255,255,255,0.4)',
                 color: 'white',
@@ -100,7 +102,7 @@ export function ARTContactCTA() {
                 },
               }}
             >
-              Learn About Us
+              Explore Services
             </Button>
           </Box>
         </Box>

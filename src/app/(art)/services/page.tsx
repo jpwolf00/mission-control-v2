@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Services - ART Consulting",
-  description: "Explore our art consulting and installation services for residential and commercial spaces. From curation to hanging, we handle everything.",
+  title: "Art Consulting Services | Residential & Commercial | ART Consulting",
+  description: "Explore our comprehensive art consulting and installation services. From private home curation to corporate art programs, we handle everything from selection to installation.",
+  keywords: ["art consulting services", "residential art consulting", "commercial art services", "art installation", "corporate art program", "hotel art curation"],
 };
 
 import Box from '@mui/material/Box';
@@ -18,14 +19,14 @@ import { Home, Building2, ArrowRight, Check } from 'lucide-react';
 const services = [
   {
     title: 'Residential Art Consulting',
-    description: 'We help homeowners discover and select artwork that complements their living spaces, reflecting their personal style and creating welcoming environments.',
+    description: 'We help homeowners discover and select artwork that complements their living spaces, creating a personal gallery that reflects their unique taste and enhances everyday life.',
     icon: Home,
     href: '/art/services/residential',
     placeholderColor: '#667eea',
   },
   {
     title: 'Commercial Art Solutions',
-    description: 'From corporate offices to hotels and retail spaces, we create memorable environments that enhance brand identity and inspire employees and customers.',
+    description: 'From corporate offices to hotels and retail spaces, we create memorable environments that enhance brand identity, inspire employees, and leave lasting impressions on guests.',
     icon: Building2,
     href: '/art/services/commercial',
     placeholderColor: '#764ba2',
@@ -33,12 +34,14 @@ const services = [
 ];
 
 const benefits = [
-  'Personalized art selection based on your style and preferences',
-  'Access to exclusive artwork from curated artist networks',
-  'Professional installation with attention to lighting and placement',
-  'Art care and maintenance guidance',
-  'Flexible consultation options - in-person or virtual',
+  'Personalized art selection tailored to your style, preferences, and budget',
+  'Access to exclusive artwork from our curated network of artists worldwide',
+  'Professional installation with careful attention to lighting and placement',
+  'Art care and maintenance guidance to preserve your collection',
+  'Flexible consultation options—in-person, virtual, or hybrid',
   'Post-installation follow-up to ensure your complete satisfaction',
+  'Art rotation programs for clients who love variety',
+  'Framing and preservation consultation services',
 ];
 
 export default function ServicesPage() {
@@ -68,8 +71,9 @@ export default function ServicesPage() {
           </Typography>
           <Typography variant="body1" color="text.secondary" sx={{ fontSize: '1.15rem', maxWidth: 700, lineHeight: 1.7 }}>
             We offer end-to-end art consulting and installation services for both residential 
-            and commercial clients. Whether you're furnishing a new home or redesigning 
-            corporate spaces, our team brings expertise and passion to every project.
+            and commercial clients. Whether you're furnishing a new home or designing 
+            corporate spaces, our team brings expertise, passion, and a keen eye for 
+            detail to every project.
           </Typography>
         </Container>
       </Box>

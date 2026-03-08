@@ -10,11 +10,11 @@ import Button from '@mui/material/Button';
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
 
-// Placeholder project data
+// Featured project data - shows a sample of our best work on homepage
 const projects = [
   {
     id: '1',
-    title: 'Modern Living Room',
+    title: 'Modern Tribeca Loft',
     category: 'Residential',
     location: 'Manhattan, NY',
     imageId: 'IMG-009',
@@ -22,7 +22,7 @@ const projects = [
   },
   {
     id: '2',
-    title: 'Corporate Headquarters',
+    title: 'Financial Services HQ',
     category: 'Commercial',
     location: 'Midtown, NY',
     imageId: 'IMG-011',
@@ -52,7 +52,7 @@ export function ARTProjectsPreview() {
             color="text.secondary"
             sx={{ maxWidth: 600, mx: 'auto', mt: 2 }}
           >
-            Explore our portfolio of residential and commercial installations, each one a unique expression of space and style.
+            Explore our portfolio of residential and commercial installations, each one a unique expression of space, style, and storytelling.
           </Typography>
         </Box>
 

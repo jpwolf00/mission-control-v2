@@ -13,37 +13,37 @@ import Tab from '@mui/material/Tab';
 const allProjects = [
   {
     id: '1',
-    title: 'Modern Living Room',
+    title: 'Modern Tribeca Loft',
     category: 'Residential',
     location: 'Manhattan, NY',
-    description: 'A complete art curation for a luxury apartment in Midtown Manhattan.',
+    description: 'A complete art curation for a luxury Tribeca loft, featuring contemporary works from emerging artists.',
     imageId: 'IMG-009',
     placeholderColor: '#667eea',
   },
   {
     id: '2',
-    title: 'Brownstone Renovation',
+    title: 'Brooklyn Brownstone',
     category: 'Residential',
     location: 'Brooklyn, NY',
-    description: 'Art selection and installation for a restored Brooklyn brownstone.',
+    description: 'Art selection and installation for a restored Brooklyn brownstone, blending classic and contemporary pieces.',
     imageId: 'IMG-010',
     placeholderColor: '#764ba2',
   },
   {
     id: '3',
-    title: 'Corporate Headquarters',
+    title: 'Financial Services Headquarters',
     category: 'Commercial',
     location: 'Midtown, NY',
-    description: 'Comprehensive art program for a financial services firm headquarters.',
+    description: 'Comprehensive art program for a financial services firm headquarters, creating a sophisticated work environment.',
     imageId: 'IMG-011',
     placeholderColor: '#667eea',
   },
   {
     id: '4',
-    title: 'Boutique Hotel Lobby',
+    title: 'Boutique Hotel Collection',
     category: 'Commercial',
     location: 'SoHo, NY',
-    description: 'Statement art installations for a boutique hotel lobby and common areas.',
+    description: 'Statement art installations for a boutique hotel lobby and common areas, creating a distinctive guest experience.',
     imageId: 'IMG-012',
     placeholderColor: '#764ba2',
   },
@@ -86,7 +86,8 @@ export default function ProjectsPage() {
           </Typography>
           <Typography variant="body1" color="text.secondary" sx={{ fontSize: '1.15rem', maxWidth: 600, lineHeight: 1.7 }}>
             Explore our collection of residential and commercial art installations. 
-            Each project reflects our commitment to transforming spaces through curated art.
+            Each project reflects our commitment to transforming spaces through curated art 
+            that tells a compelling story.
           </Typography>
         </Container>
       </Box>

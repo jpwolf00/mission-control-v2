@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Commercial Art Consulting - Corporate & Hospitality",
-  description: "Elevate your business with professional art consulting. Corporate offices, hotels, retail spaces—create environments that inspire.",
+  title: "Commercial Art Consulting | Corporate & Hospitality | ART Consulting",
+  description: "Elevate your business with professional art consulting. From corporate offices to hotels and retail spaces, create environments that inspire and impress.",
+  keywords: ["commercial art consulting", "corporate art program", "hotel art curation", "office art installation", "retail art design"],
 };
 
 import Box from '@mui/material/Box';
@@ -18,29 +19,31 @@ import { ArrowRight } from 'lucide-react';
 const sectors = [
   {
     title: 'Corporate Offices',
-    description: 'Create inspiring work environments that boost employee morale and impress clients with carefully curated art collections.',
+    description: 'Create inspiring work environments that boost employee morale, enhance productivity, and impress clients with carefully curated art collections.',
   },
   {
     title: 'Hotels & Hospitality',
-    description: 'Transform guest experiences with distinctive art that reinforces your brand identity and creates memorable atmospheres.',
+    description: 'Transform guest experiences with distinctive art that reinforces your brand identity and creates memorable atmospheres that encourage return visits.',
   },
   {
     title: 'Retail Spaces',
-    description: 'Enhance customer engagement and brand perception with art installations that draw attention and create unique shopping experiences.',
+    description: 'Enhance customer engagement and brand perception with art installations that draw attention, create photo-worthy moments, and elevate the shopping experience.',
   },
   {
     title: 'Restaurants',
-    description: 'Set the mood and enhance dining experiences with art that complements your cuisine and creates distinctive ambiances.',
+    description: 'Set the mood and enhance dining experiences with art that complements your cuisine and creates a distinctive ambiance guests will remember.',
   },
 ];
 
 const benefits = [
-  'Boost employee productivity and morale with inspiring environments',
-  'Create memorable experiences for clients and guests',
-  'Reinforce brand identity through curated art selections',
-  'Stand out from competitors with distinctive spaces',
+  'Boost employee productivity and morale with inspiring visual environments',
+  'Create memorable experiences for clients and guests that set you apart',
+  'Reinforce brand identity through curated art selections that tell your story',
+  'Stand out from competitors with distinctive spaces that generate buzz',
   'Increase property value with professional art installations',
-  'Ongoing maintenance and art rotation services available',
+  'Ongoing maintenance, rotation, and refresh services available',
+  'Scale art programs from single rooms to entire buildings',
+  'Tax-efficient acquisition guidance for business art collections',
 ];
 
 export default function CommercialServicesPage() {
@@ -73,7 +76,7 @@ export default function CommercialServicesPage() {
               <Typography variant="body1" color="text.secondary" sx={{ fontSize: '1.15rem', lineHeight: 1.7, mb: 4 }}>
                 The art in your commercial space speaks volumes about your brand. We help businesses 
                 create impactful environments that inspire employees, impress clients, and reinforce 
-                brand identity through thoughtful art curation.
+                brand identity through thoughtful art curation that elevates every aspect of your space.
               </Typography>
               <Button
                 component={Link}
