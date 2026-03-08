@@ -1,0 +1,2 @@
+-- Migration SQL
+-- Add StoryAttachment model for file attachments

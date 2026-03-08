@@ -2,9 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireIdempotencyKey } from '@/api/v1/idempotency';
 import { completeSession, getSession, autoDispatchNextGate } from '@/services/dispatch-service';
 import { getStoryByIdFromDB, saveGateCompletion, updateStoryStatus } from '@/services/story-store-db';
+import { incrementInvocationCount } from '@/services/budget-service';
 import type { Gate } from '@/domain/workflow-types';
 
-type CallbackEvent = 'completed' | 'failed' | 'heartbeat';
+type CallbackEvent = 'completed' | 'failed' | 'heartbeat' | 'invocation';
 
 export async function POST(request: NextRequest) {
   const idempotencyCheck = requireIdempotencyKey(request.headers);
@@ -17,13 +18,14 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { sessionId, agentId, role, event, evidence, error: agentError } = body as {
+    const { sessionId, agentId, role, event, evidence, error: agentError, invocationCount } = body as {
       sessionId: string;
       agentId: string;
       role: string;
       event: CallbackEvent;
       evidence?: unknown[];
       error?: string;
+      invocationCount?: number;
     };
 
     if (!sessionId || !agentId || !role || !event) {
@@ -43,6 +45,18 @@ export async function POST(request: NextRequest) {
     }
 
     switch (event) {
+      case 'invocation': {
+        // Track invocation count for budget reconciliation
+        const count = invocationCount || 1;
+        await incrementInvocationCount(sessionId, count);
+        console.log(`[agent-callback] Invocation recorded for session ${sessionId}: +${count}`);
+        return NextResponse.json({
+          status: 'invocation_recorded',
+          sessionId,
+          count,
+        });
+      }
+
       case 'completed': {
         const story = await getStoryByIdFromDB(session.storyId);
         if (!story) {
