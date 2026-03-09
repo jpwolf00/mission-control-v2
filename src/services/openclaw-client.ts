@@ -10,11 +10,15 @@ interface TriggerAgentConfig {
   context: {
     story: Story;
   };
+  model?: string;      // Optional: model to use for this run
+  provider?: string;   // Optional: provider to use for this run
 }
 
 interface TriggerResult {
   success: boolean;
   agentId?: string;
+  model?: string;      // Model used by the agent (e.g., "alibaba/qwen3.5-plus")
+  provider?: string;   // Provider used by the agent (e.g., "alibaba")
   error?: string;
 }
 
@@ -131,19 +135,25 @@ export async function triggerAgent(config: TriggerAgentConfig): Promise<TriggerR
   ].filter(Boolean).join('\n');
 
   try {
+    const requestBody: Record<string, unknown> = {
+      message,
+      name: `MC2-${role}`,
+      agentId: role,
+      sessionKey: hookSessionKey,
+      deliver: false,
+    };
+    
+    // Pass model/provider if specified (OpenClaw will use these for the run)
+    if (config.model) requestBody.model = config.model;
+    if (config.provider) requestBody.provider = config.provider;
+
     const response = await fetch(`${gatewayUrl}/hooks/agent`, {
       method: 'POST',
       headers: {
         'x-openclaw-token': hookToken,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        message,
-        name: `MC2-${role}`,
-        agentId: role,
-        sessionKey: hookSessionKey,
-        deliver: false,
-      }),
+      body: JSON.stringify(requestBody),
     });
 
     if (!response.ok) {
@@ -152,8 +162,27 @@ export async function triggerAgent(config: TriggerAgentConfig): Promise<TriggerR
       return { success: false, error: `Gateway returned ${response.status}` };
     }
 
+    // Parse response to extract model/provider info
+    const responseData = await response.json().catch((e) => {
+      console.warn(`[openclaw]   Failed to parse response JSON:`, e);
+      return {};
+    });
+    
     console.log(`[openclaw]   Agent triggered via /hooks/agent for role "${role}"`);
-    return { success: true, agentId: `agent-${role}-${sessionId.slice(0, 8)}` };
+    console.log(`[openclaw]   Response:`, JSON.stringify(responseData, null, 2).slice(0, 500));
+    
+    const model = responseData.model || responseData.session?.model;
+    const provider = responseData.provider || responseData.session?.provider;
+    
+    if (model) console.log(`[openclaw]   Model: ${model}`);
+    if (provider) console.log(`[openclaw]   Provider: ${provider}`);
+
+    return { 
+      success: true, 
+      agentId: `agent-${role}-${sessionId.slice(0, 8)}`,
+      ...(model && { model }),
+      ...(provider && { provider }),
+    };
   } catch (error) {
     console.error(`[openclaw]   Failed to reach gateway:`, error);
     return { success: false, error: String(error) };

@@ -157,6 +157,7 @@ export async function dispatchStory(
   }
 
   // Persist session before external dispatch.
+  // Set model/provider from options - these will be updated later if OpenClaw reports different values
   await prisma.runSession.create({
     data: {
       id: sessionId,
@@ -166,8 +167,8 @@ export async function dispatchStory(
       startedAt: new Date(),
       idempotencyKey,
       dispatchAttempts: 1,
-      provider: options?.provider,
-      model: options?.model,
+      provider: options?.provider || null,
+      model: options?.model || null,
       estimatedInvocations: options?.estimatedInvocations || 0,
       metadata: {
         gateRole: gateToRole(gateTyped),
@@ -181,12 +182,15 @@ export async function dispatchStory(
   }
 
   // Trigger Openclaw agent for this gate
+  // Pass model/provider if specified in dispatch options
   const triggerResult = await triggerAgent({
     storyId,
     gate: gateTyped,
     sessionId,
     role: gateToRole(gateTyped),
     context: { story },
+    model: options?.model,
+    provider: options?.provider,
   });
 
   if (!triggerResult.success) {
@@ -217,6 +221,17 @@ export async function dispatchStory(
       error: triggerResult.error || 'Failed to trigger OpenClaw agent',
       code: DISPATCH_RETURN_CODES.GATEWAY_ERROR,
     };
+  }
+
+  // Update session with model/provider if captured from OpenClaw response
+  if (triggerResult.model || triggerResult.provider) {
+    await prisma.runSession.update({
+      where: { id: sessionId },
+      data: {
+        ...(triggerResult.model && { model: triggerResult.model }),
+        ...(triggerResult.provider && { provider: triggerResult.provider }),
+      },
+    });
   }
 
   return {

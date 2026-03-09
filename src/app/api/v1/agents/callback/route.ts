@@ -115,15 +115,15 @@ export async function POST(request: NextRequest) {
         }
 
         // Update session with model/provider if reported by agent
-        if (model || provider) {
-          await prisma.runSession.update({
-            where: { id: sessionId },
-            data: {
-              ...(model && { model }),
-              ...(provider && { provider }),
-            },
-          });
-        }
+        // Also update lastHeartbeatAt to track final activity
+        await prisma.runSession.update({
+          where: { id: sessionId },
+          data: {
+            ...(model && { model }),
+            ...(provider && { provider }),
+            lastHeartbeatAt: new Date(),
+          },
+        });
 
         // Auto-dispatch to next gate if not the final gate
         let autoDispatchResult: { attempted: boolean; success?: boolean; nextGate?: string; sessionId?: string; error?: string; reason?: string } = { attempted: false };
@@ -167,6 +167,12 @@ export async function POST(request: NextRequest) {
           await updateStoryStatus(session.storyId, 'blocked');
         }
 
+        // Update lastHeartbeatAt before completing session
+        await prisma.runSession.update({
+          where: { id: sessionId },
+          data: { lastHeartbeatAt: new Date() },
+        });
+
         await completeSession(sessionId, 'failed');
         console.log(`[agent-callback] Session ${sessionId} failed. Agent: ${agentId}, Error: ${agentError}`);
         return NextResponse.json({
@@ -182,6 +188,11 @@ export async function POST(request: NextRequest) {
       }
 
       case 'heartbeat':
+        // Update lastHeartbeatAt for live activity tracking
+        await prisma.runSession.update({
+          where: { id: sessionId },
+          data: { lastHeartbeatAt: new Date() },
+        });
         console.log(`[agent-callback] Heartbeat from ${agentId} for session ${sessionId}`);
         return NextResponse.json({
           status: 'heartbeat_received',
