@@ -19,7 +19,8 @@ interface DispatchResult {
   code?: DispatchReturnCode;
 }
 
-const ACTIVE_SESSION_TTL_MS = Number(process.env.ACTIVE_SESSION_TTL_MS || 15 * 60 * 1000);
+// Hard guard: never create a second active run for the same story+gate.
+// Previous TTL-based dedupe caused duplicate runs when long gates exceeded the TTL.
 
 /**
  * Admission check for dispatch - validates budget, provider, and other constraints
@@ -84,18 +85,21 @@ export async function dispatchStory(
     };
   }
 
-  // Also guard against active session for same story/gate in TTL window.
+  // Hard guard against duplicate active sessions for the same story+gate.
+  // If one exists, always return it as idempotent (no TTL expiry-based redispatch).
   const activeSameGate = await prisma.runSession.findFirst({
     where: {
       storyId,
       gate,
       status: 'active',
-      startedAt: { gte: new Date(Date.now() - ACTIVE_SESSION_TTL_MS) },
     },
     orderBy: { startedAt: 'desc' },
   });
 
   if (activeSameGate) {
+    console.log(
+      `[dispatch] idempotent active run reuse story=${storyId} gate=${gate} session=${activeSameGate.id}`
+    );
     return {
       success: true,
       sessionId: activeSameGate.id,
