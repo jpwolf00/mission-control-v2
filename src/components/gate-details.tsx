@@ -19,6 +19,9 @@ import ScreenshotMonitorIcon from '@mui/icons-material/ScreenshotMonitor';
 import DescriptionIcon from '@mui/icons-material/Description';
 import LinkIcon from '@mui/icons-material/Link';
 import ScheduleIcon from '@mui/icons-material/Schedule';
+import MemoryIcon from '@mui/icons-material/Memory';
+import CloudIcon from '@mui/icons-material/Cloud';
+import SpeedIcon from '@mui/icons-material/Speed';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import RadioButtonUncheckedIcon from '@mui/icons-material/RadioButtonUnchecked';
 import CircularProgress from '@mui/material/CircularProgress';
@@ -107,6 +110,19 @@ function formatDateTime(date?: Date | string | null): string {
   });
 }
 
+function formatTimeAgo(date?: Date | string | null): string {
+  if (!date) return '-';
+  const d = new Date(date);
+  const now = new Date();
+  const diffMs = now.getTime() - d.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  if (diffMins < 1) return 'just now';
+  if (diffMins < 60) return `${diffMins}m ago`;
+  const diffHours = Math.floor(diffMins / 60);
+  if (diffHours < 24) return `${diffHours}h ago`;
+  return `${Math.floor(diffHours / 24)}d ago`;
+}
+
 function getArtifactIcon(type?: string) {
   switch (type) {
     case 'screenshot':
@@ -132,7 +148,15 @@ export function GateDetails({ gates, currentGate }: GateDetailsProps) {
   gates.forEach(g => gateMap.set(g.gate, g));
 
   // Check if we have any telemetry data
-  const hasTelemetry = gates.some(g => g.pickedUpAt || g.finalMessage || (g.artifacts && g.artifacts.length > 0));
+  const hasTelemetry = gates.some(g => 
+    g.pickedUpAt || 
+    g.finalMessage || 
+    (g.artifacts && g.artifacts.length > 0) ||
+    g.model ||
+    g.provider ||
+    g.invocations ||
+    g.lastHeartbeatAt
+  );
 
   return (
     <Card sx={{ mt: 2 }}>
@@ -152,7 +176,8 @@ export function GateDetails({ gates, currentGate }: GateDetailsProps) {
               const status = gateInfo?.status || (currentGate === gateName ? 'in_progress' : 'pending');
               const colors = statusColors[status] || statusColors.pending;
               const isExpanded = expanded[gateName] || false;
-              const hasDetails = gateInfo?.pickedUpAt || gateInfo?.finalMessage || (gateInfo?.artifacts && gateInfo.artifacts.length > 0);
+              const hasDetails = gateInfo?.pickedUpAt || gateInfo?.finalMessage || (gateInfo?.artifacts && gateInfo.artifacts.length > 0) || gateInfo?.model || gateInfo?.provider || gateInfo?.invocations;
+              const hasTelemetryData = gateInfo?.model || gateInfo?.provider || gateInfo?.invocations || gateInfo?.lastHeartbeatAt;
               const isCurrent = currentGate === gateName;
 
               return (
@@ -225,6 +250,48 @@ export function GateDetails({ gates, currentGate }: GateDetailsProps) {
                           <Typography variant="body2" color="primary" sx={{ fontSize: '0.75rem', fontStyle: 'italic' }}>
                             In progress...
                           </Typography>
+                        )}
+                        {/* Show telemetry badge if available */}
+                        {hasTelemetryData && (
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, ml: 'auto' }}>
+                            {gateInfo?.model && (
+                              <Tooltip title="Model">
+                                <Chip 
+                                  icon={<MemoryIcon sx={{ fontSize: '12px !important' }} />}
+                                  label={gateInfo.model.split('/').pop() || gateInfo.model}
+                                  size="small"
+                                  sx={{ fontSize: '0.6rem', height: 18, bgcolor: '#f0f9ff', color: '#0369a1' }}
+                                />
+                              </Tooltip>
+                            )}
+                            {gateInfo?.provider && (
+                              <Tooltip title="Provider">
+                                <Chip 
+                                  icon={<CloudIcon sx={{ fontSize: '12px !important' }} />}
+                                  label={gateInfo.provider}
+                                  size="small"
+                                  sx={{ fontSize: '0.6rem', height: 18, bgcolor: '#f0fdf4', color: '#166534' }}
+                                />
+                              </Tooltip>
+                            )}
+                            {gateInfo?.invocations && gateInfo.invocations > 0 && (
+                              <Tooltip title="Invocations">
+                                <Chip 
+                                  icon={<SpeedIcon sx={{ fontSize: '12px !important' }} />}
+                                  label={`${gateInfo.invocations} inv`}
+                                  size="small"
+                                  sx={{ fontSize: '0.6rem', height: 18, bgcolor: '#fef3c7', color: '#92400e' }}
+                                />
+                              </Tooltip>
+                            )}
+                            {gateInfo?.lastHeartbeatAt && isCurrent && (
+                              <Tooltip title="Last heartbeat">
+                                <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.65rem' }}>
+                                  ♥ {formatTimeAgo(gateInfo.lastHeartbeatAt)}
+                                </Typography>
+                              </Tooltip>
+                            )}
+                          </Box>
                         )}
                       </Box>
                     </TableCell>

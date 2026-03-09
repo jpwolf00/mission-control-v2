@@ -41,6 +41,10 @@ interface PipelineGate {
   model: string | null;
   provider: string | null;
   startedAt: string | null;
+  pickedUpAt: string | null;
+  finalMessage: string | null;
+  invocations: number;
+  lastHeartbeatAt: string | null;
 }
 
 interface RuntimeState {
@@ -52,6 +56,8 @@ interface RuntimeState {
     model: string | null;
     provider: string | null;
     startedAt: string | null;
+    lastHeartbeatAt: string | null;
+    invocations: number;
     storyTitle: string;
   }>;
   activeAgentCount: number;
@@ -235,7 +241,9 @@ export default function DashboardPage() {
                 {gate.status === 'active' && (
                   <Box sx={{ pl: 2, py: 0.5 }}>
                     <Typography variant="caption" color="text.secondary" display="block">
-                      {gate.model || 'No model'} · {formatTimeAgo(gate.startedAt)}
+                      {gate.model || 'No model'} · Started {formatTimeAgo(gate.startedAt)}
+                      {gate.invocations > 0 && ` · ${gate.invocations} inv`}
+                      {gate.lastHeartbeatAt && ` · Heartbeat ${formatTimeAgo(gate.lastHeartbeatAt)}`}
                     </Typography>
                   </Box>
                 )}
@@ -270,13 +278,19 @@ export default function DashboardPage() {
                     <Typography variant="body2" fontWeight={500}>
                       {session.gate}
                     </Typography>
-                    <Chip label="active" size="small" sx={{ fontSize: '0.65rem', bgcolor: '#dbeafe', color: '#1e40af' }} />
+                    <Box sx={{ display: 'flex', gap: 0.5 }}>
+                      {session.invocations > 0 && (
+                        <Chip label={`${session.invocations} inv`} size="small" sx={{ fontSize: '0.6rem', bgcolor: '#f0fdf4', color: '#166534' }} />
+                      )}
+                      <Chip label="active" size="small" sx={{ fontSize: '0.65rem', bgcolor: '#dbeafe', color: '#1e40af' }} />
+                    </Box>
                   </Box>
                   <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 0.5 }}>
                     {session.storyTitle}
                   </Typography>
                   <Typography variant="caption" color="text.secondary" display="block">
-                    {session.model || 'No model'} · {formatTimeAgo(session.startedAt)}
+                    {session.model || 'No model'} · Started {formatTimeAgo(session.startedAt)}
+                    {session.lastHeartbeatAt && ` · Heartbeat ${formatTimeAgo(session.lastHeartbeatAt)}`}
                   </Typography>
                 </Box>
               ))

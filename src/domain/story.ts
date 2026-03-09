@@ -86,6 +86,12 @@ export interface StoryGateInfo {
   completedBy?: string | null;
   finalMessage?: string | null;         // Final agent output/summary
   artifacts?: GateArtifact[];           // Screenshots, logs, evidence
+  // Session telemetry (from RunSession)
+  model?: string | null;                // Model used by agent (e.g., "alibaba/qwen3.5-plus")
+  provider?: string | null;             // Provider used by agent (e.g., "alibaba")
+  invocations?: number;                  // Number of API invocations
+  lastHeartbeatAt?: Date | string | null; // Last activity timestamp
+  sessionId?: string | null;             // Active session ID if gate is in progress
 }
 
 /**

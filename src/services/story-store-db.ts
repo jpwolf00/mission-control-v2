@@ -47,7 +47,6 @@ export async function getStoryByIdFromDB(id: string): Promise<Story | null> {
         gates: true,
         sessions: {
           orderBy: { createdAt: 'desc' },
-          take: 1,
         },
         attachments: {
           orderBy: { createdAt: 'asc' },
@@ -170,6 +169,16 @@ interface PrismaStoryWithGates {
     finalMessage: string | null;     // Final agent output/summary
     artifacts: Prisma.JsonValue;     // Screenshot URLs, links, metadata
   }>;
+  sessions?: Array<{
+    id: string;
+    gate: string;
+    status: string;
+    model: string | null;
+    provider: string | null;
+    actualInvocations: number;
+    lastHeartbeatAt: Date | null;
+    startedAt: Date | null;
+  }>;
   attachments?: Array<{
     id: string;
     filename: string;
@@ -214,15 +223,45 @@ function computeCurrentGate(gates: StoryGateInfo[], storyStatus: string): string
 }
 
 function mapPrismaToDomain(prismaStory: PrismaStoryWithGates): Story {
-  const gateInfos: StoryGateInfo[] = (prismaStory.gates || []).map((g) => ({
-    gate: g.gate,
-    status: g.status,
-    pickedUpAt: g.pickedUpAt,
-    completedAt: g.completedAt,
-    completedBy: g.completedBy,
-    finalMessage: g.finalMessage || undefined,
-    artifacts: (g.artifacts as unknown as StoryGateInfo['artifacts']) || undefined,
-  }));
+  // Build a map of sessions by gate for telemetry lookup
+  type SessionType = {
+    id: string;
+    gate: string;
+    status: string;
+    model: string | null;
+    provider: string | null;
+    actualInvocations: number;
+    lastHeartbeatAt: Date | null;
+    startedAt: Date | null;
+  };
+  const sessionByGate = new Map<string, SessionType>();
+  if (prismaStory.sessions) {
+    for (const session of prismaStory.sessions) {
+      // Only add if not already present (take first/most recent)
+      if (!sessionByGate.has(session.gate)) {
+        sessionByGate.set(session.gate, session);
+      }
+    }
+  }
+
+  const gateInfos: StoryGateInfo[] = (prismaStory.gates || []).map((g) => {
+    const session = sessionByGate.get(g.gate);
+    return {
+      gate: g.gate,
+      status: g.status,
+      pickedUpAt: g.pickedUpAt,
+      completedAt: g.completedAt,
+      completedBy: g.completedBy,
+      finalMessage: g.finalMessage || undefined,
+      artifacts: (g.artifacts as unknown as StoryGateInfo['artifacts']) || undefined,
+      // Include session telemetry
+      model: session?.model || null,
+      provider: session?.provider || null,
+      invocations: session?.actualInvocations || 0,
+      lastHeartbeatAt: session?.lastHeartbeatAt || null,
+      sessionId: session?.status === 'active' ? session.id : null,
+    };
+  });
 
   // Map attachments to StoryAttachmentRef format
   const attachmentRefs = (prismaStory.attachments || []).map((a) => ({
