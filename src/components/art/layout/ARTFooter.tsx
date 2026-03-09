@@ -24,7 +24,7 @@ const footerSections = [
     links: [
       { href: '/art/about', label: 'About Us' },
       { href: '/art/projects', label: 'Projects' },
-      { href: '/art/updates', label: 'Updates' },
+      { href: '/art/faq', label: 'FAQ' },
       { href: '/art/contact', label: 'Contact' },
     ]
   }

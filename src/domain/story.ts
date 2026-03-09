@@ -20,6 +20,31 @@ export interface StoryAttachmentRef {
 }
 
 /**
+ * Story comment (MC2: Revision loop feature)
+ */
+export interface StoryComment {
+  id: string;
+  storyId: string;
+  author: string;
+  content: string;
+  createdAt: Date | string;
+}
+
+/**
+ * Story revision (MC2: Revision loop feature)
+ */
+export interface StoryRevision {
+  id: string;
+  storyId: string;
+  revisionType: 'accept_final' | 'request_revision';
+  targetGate?: string;
+  commentId?: string;
+  description?: string;
+  createdBy: string;
+  createdAt: Date | string;
+}
+
+/**
  * Story metadata required for dispatch precondition
  */
 export interface StoryMetadata {
@@ -72,6 +97,8 @@ export interface Story {
   metadata: StoryMetadata;
   gates?: StoryGateInfo[];
   currentGate?: string | null;
+  comments?: StoryComment[];    // Revision loop feature
+  revisions?: StoryRevision[]; // Revision loop feature
   createdAt: Date;
   updatedAt: Date;
 }

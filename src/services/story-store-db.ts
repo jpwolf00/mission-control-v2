@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/prisma';
-import { Story, StoryGateInfo, CreateStoryInput } from '@/domain/story';
+import { Story, StoryGateInfo, CreateStoryInput, StoryComment, StoryRevision } from '@/domain/story';
 import { GATES } from '@/domain/workflow-types';
 import { v4 as uuidv4 } from 'uuid';
 import { Prisma } from '@prisma/client';
@@ -252,4 +252,210 @@ function mapPrismaToDomain(prismaStory: PrismaStoryWithGates): Story {
     createdAt: prismaStory.createdAt,
     updatedAt: prismaStory.updatedAt,
   };
+}
+
+/**
+ * Add a comment to a story (MC2: Revision loop feature)
+ */
+export async function addCommentToStory(
+  storyId: string,
+  content: string,
+  author: string = 'user'
+): Promise<StoryComment> {
+  try {
+    const comment = await prisma.storyComment.create({
+      data: {
+        id: uuidv4(),
+        storyId,
+        content,
+        author,
+      },
+    });
+    
+    return {
+      id: comment.id,
+      storyId: comment.storyId,
+      author: comment.author,
+      content: comment.content,
+      createdAt: comment.createdAt,
+    };
+  } catch (error) {
+    console.error('Database error in addCommentToStory:', error);
+    throw new Error('Failed to add comment to story');
+  }
+}
+
+/**
+ * Get all comments for a story (MC2: Revision loop feature)
+ */
+export async function getCommentsForStory(storyId: string): Promise<StoryComment[]> {
+  try {
+    const comments = await prisma.storyComment.findMany({
+      where: { storyId },
+      orderBy: { createdAt: 'asc' },
+    });
+    
+    return comments.map((c) => ({
+      id: c.id,
+      storyId: c.storyId,
+      author: c.author,
+      content: c.content,
+      createdAt: c.createdAt,
+    }));
+  } catch (error) {
+    console.error('Database error in getCommentsForStory:', error);
+    throw new Error('Failed to get comments for story');
+  }
+}
+
+/**
+ * Create a revision record (MC2: Revision loop feature)
+ * Called when user accepts final or requests revision
+ */
+export async function createRevision(
+  storyId: string,
+  revisionType: 'accept_final' | 'request_revision',
+  options?: {
+    targetGate?: string;
+    commentId?: string;
+    description?: string;
+    createdBy?: string;
+  }
+): Promise<StoryRevision> {
+  try {
+    const revision = await prisma.storyRevision.create({
+      data: {
+        id: uuidv4(),
+        storyId,
+        revisionType,
+        targetGate: options?.targetGate,
+        commentId: options?.commentId,
+        description: options?.description,
+        createdBy: options?.createdBy || 'user',
+      },
+    });
+    
+    return {
+      id: revision.id,
+      storyId: revision.storyId,
+      revisionType: revision.revisionType as 'accept_final' | 'request_revision',
+      targetGate: revision.targetGate || undefined,
+      commentId: revision.commentId || undefined,
+      description: revision.description || undefined,
+      createdBy: revision.createdBy,
+      createdAt: revision.createdAt,
+    };
+  } catch (error) {
+    console.error('Database error in createRevision:', error);
+    throw new Error('Failed to create revision');
+  }
+}
+
+/**
+ * Get all revisions for a story (MC2: Revision loop feature)
+ */
+export async function getRevisionsForStory(storyId: string): Promise<StoryRevision[]> {
+  try {
+    const revisions = await prisma.storyRevision.findMany({
+      where: { storyId },
+      orderBy: { createdAt: 'desc' },
+    });
+    
+    return revisions.map((r) => ({
+      id: r.id,
+      storyId: r.storyId,
+      revisionType: r.revisionType as 'accept_final' | 'request_revision',
+      targetGate: r.targetGate || undefined,
+      commentId: r.commentId || undefined,
+      description: r.description || undefined,
+      createdBy: r.createdBy,
+      createdAt: r.createdAt,
+    }));
+  } catch (error) {
+    console.error('Database error in getRevisionsForStory:', error);
+    throw new Error('Failed to get revisions for story');
+  }
+}
+
+/**
+ * Mark story as accepted final (MC2: Revision loop feature)
+ */
+export async function acceptFinalStory(storyId: string): Promise<Story | null> {
+  try {
+    const story = await prisma.story.update({
+      where: { id: storyId },
+      data: { status: 'archived' },
+      include: { gates: true },
+    });
+    
+    // Create revision record
+    await createRevision(storyId, 'accept_final');
+    
+    return mapPrismaToDomain(story);
+  } catch (error) {
+    console.error('Database error in acceptFinalStory:', error);
+    throw new Error('Failed to accept final story');
+  }
+}
+
+/**
+ * Request revisions for a story (MC2: Revision loop feature)
+ * Routes story back to the specified gate (default: implementer)
+ */
+export async function requestRevision(
+  storyId: string,
+  targetGate: string = 'implementer',
+  description?: string
+): Promise<Story | null> {
+  try {
+    // Get the story first to check current status
+    const existingStory = await prisma.story.findUnique({
+      where: { id: storyId },
+    });
+    
+    if (!existingStory) {
+      return null;
+    }
+    
+    // Create revision record
+    await createRevision(storyId, 'request_revision', {
+      targetGate,
+      description,
+    });
+    
+    // Reset story status to active and set current gate to target
+    const story = await prisma.story.update({
+      where: { id: storyId },
+      data: { 
+        status: 'active',
+      },
+      include: { gates: true },
+    });
+    
+    // Also reset gate status for the target gate to allow re-dispatch
+    await prisma.storyGate.upsert({
+      where: {
+        storyId_gate: {
+          storyId,
+          gate: targetGate,
+        },
+      },
+      update: {
+        status: 'pending',
+        completedAt: null,
+        completedBy: null,
+      },
+      create: {
+        id: uuidv4(),
+        storyId,
+        gate: targetGate,
+        status: 'pending',
+      },
+    });
+    
+    return mapPrismaToDomain(story);
+  } catch (error) {
+    console.error('Database error in requestRevision:', error);
+    throw new Error('Failed to request revision');
+  }
 }

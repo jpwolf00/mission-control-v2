@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "About Us | ART Consulting - Our Story & Approach",
-  description: "Learn about ART Consulting's mission to transform spaces through thoughtful art curation. Meet our team of expert curators and installation specialists in NYC.",
-  keywords: ["art consulting", "about art consultant", "art curation team", "NYC art consultants", "art installation experts"],
+  title: "About Us | ART Consulting Lexington KY - Our Story & Approach",
+  description: "Learn about ART Consulting's mission to transform spaces through thoughtful art curation in Lexington, KY. Meet our team of expert curators and installation specialists serving Central Kentucky.",
+  keywords: ["art consulting Lexington KY", "about art consultant Lexington", "art curation team Kentucky", "Lexington art consultants", "art installation experts Lexington"],
 };
 
 import Box from '@mui/material/Box';

@@ -4,6 +4,7 @@ import { completeSession, getSession, autoDispatchNextGate } from '@/services/di
 import { getStoryByIdFromDB, saveGateCompletion, updateStoryStatus } from '@/services/story-store-db';
 import { incrementInvocationCount } from '@/services/budget-service';
 import { requireAuth } from '@/lib/auth-middleware';
+import { prisma } from '@/lib/prisma';
 import type { Gate } from '@/domain/workflow-types';
 
 type CallbackEvent = 'completed' | 'failed' | 'heartbeat' | 'invocation';
@@ -26,7 +27,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { sessionId, agentId, role, event, evidence, error: agentError, invocationCount, pickedUpAt, finalMessage, artifacts } = body as {
+    const { sessionId, agentId, role, event, evidence, error: agentError, invocationCount, pickedUpAt, finalMessage, artifacts, model, provider } = body as {
       sessionId: string;
       agentId: string;
       role: string;
@@ -42,6 +43,8 @@ export async function POST(request: NextRequest) {
         description?: string;
         timestamp?: number;
       }[];
+      model?: string;              // Model used by agent (e.g., "alibaba/qwen3.5-plus")
+      provider?: string;           // Provider used by agent (e.g., "alibaba")
     };
 
     if (!sessionId || !agentId || !role || !event) {
@@ -109,6 +112,17 @@ export async function POST(request: NextRequest) {
           } else if (story.status === 'approved') {
             await updateStoryStatus(session.storyId, 'active');
           }
+        }
+
+        // Update session with model/provider if reported by agent
+        if (model || provider) {
+          await prisma.runSession.update({
+            where: { id: sessionId },
+            data: {
+              ...(model && { model }),
+              ...(provider && { provider }),
+            },
+          });
         }
 
         // Auto-dispatch to next gate if not the final gate

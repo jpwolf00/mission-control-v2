@@ -26,6 +26,8 @@ model Story {
   events      StoryEvent[]
   locks       DispatchLock[]
   attachments StoryAttachment[]
+  comments    StoryComment[]
+  revisions   StoryRevision[]
   
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
@@ -159,5 +161,46 @@ model StoryAttachment {
   story       Story    @relation(fields: [storyId], references: [id], onDelete: Cascade)
   
   @@map("story_attachments")
+  @@index([storyId])
+}
+
+// Comment on a story (MC2: Revision loop feature)
+model StoryComment {
+  id        String   @id @default(uuid())
+  storyId   String   @map("story_id")
+  author    String   @default("user") // Could be "user" or agent ID
+  content   String
+  
+  // Relations
+  story     Story    @relation(fields: [storyId], references: [id], onDelete: Cascade)
+  revisions StoryRevision[]
+  
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("story_comments")
+  @@index([storyId])
+}
+
+// Revision history tracking (MC2: Revision loop feature)
+model StoryRevision {
+  id            String   @id @default(uuid())
+  storyId       String   @map("story_id")
+  revisionType  String   @map("revision_type") // "accept_final" | "request_revision"
+  targetGate    String?  @map("target_gate") // Gate to route back to for revisions
+  
+  // Revision details
+  commentId     String?  @map("comment_id") // Associated comment if any
+  description   String?  // Optional description of what needs to be revised
+  
+  // Metadata
+  createdBy     String   @default("user") @map("created_by")
+  
+  // Relations
+  story         Story    @relation(fields: [storyId], references: [id], onDelete: Cascade)
+  comment       StoryComment? @relation(fields: [commentId], references: [id], onDelete: SetNull)
+  
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  @@map("story_revisions")
   @@index([storyId])
 }
