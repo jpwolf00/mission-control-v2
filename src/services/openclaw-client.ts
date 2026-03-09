@@ -140,7 +140,7 @@ export async function triggerAgent(config: TriggerAgentConfig): Promise<TriggerR
       name: `MC2-${role}`,
       agentId: role,
       sessionKey: hookSessionKey,
-      deliver: false,
+      deliver: true,
     };
     
     // Pass model/provider if specified (OpenClaw will use these for the run)
