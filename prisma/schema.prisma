@@ -41,6 +41,11 @@ model StoryGate {
   evidence  Json?
   completedAt DateTime? @map("completed_at")
   completedBy String?   @map("completed_by")
+  
+  // Gate observability fields (MC2 Gate Pipeline Observability)
+  pickedUpAt   DateTime? @map("picked_up_at")    // When gate was dispatched/picked up
+  finalMessage String?   @map("final_message")  // Final agent output/summary
+  artifacts    Json?                         // Screenshot URLs, links, metadata
 
   story     Story    @relation(fields: [storyId], references: [id], onDelete: Cascade)
 

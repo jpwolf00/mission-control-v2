@@ -13,6 +13,7 @@ import Checkbox from '@mui/material/Checkbox';
 import Alert from '@mui/material/Alert';
 import CircularProgress from '@mui/material/CircularProgress';
 import { GateTimeline } from '@/components/gate-timeline';
+import { GateDetails } from '@/components/gate-details';
 import { PageLoader } from '@/components/loading';
 import { ErrorMessage } from '@/components/error-message';
 import { AttachmentUpload } from '@/components/attachment-upload';
@@ -256,6 +257,11 @@ export default function StoryDetailPage() {
           />
         </CardContent>
       </Card>
+
+      <GateDetails
+        gates={story.gates || []}
+        currentGate={(story.currentGate || 'architect') as 'architect' | 'ui-designer' | 'implementer' | 'reviewer-a' | 'operator' | 'reviewer-b'}
+      />
 
       <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 3 }}>
         <Card>

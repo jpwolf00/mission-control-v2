@@ -29,9 +29,40 @@ interface HealthStatus {
   database?: string;
 }
 
+interface PipelineGate {
+  gate: string;
+  status: 'active' | 'pending' | 'idle';
+  activeStory: {
+    id: string;
+    title: string;
+    sessionId?: string;
+  } | null;
+  lastEvent: string | null;
+  model: string | null;
+  provider: string | null;
+  startedAt: string | null;
+}
+
+interface RuntimeState {
+  pipeline: PipelineGate[];
+  activeSessions: Array<{
+    id: string;
+    storyId: string;
+    gate: string;
+    model: string | null;
+    provider: string | null;
+    startedAt: string | null;
+    storyTitle: string;
+  }>;
+  activeAgentCount: number;
+  updatedAt: string;
+}
+
 export default function DashboardPage() {
   const [counts, setCounts] = useState<StoryCount>({ total: 0, active: 0, draft: 0, completed: 0, blocked: 0 });
   const [health, setHealth] = useState<HealthStatus>({ status: 'checking' });
+  const [runtimeState, setRuntimeState] = useState<RuntimeState | null>(null);
+  const [runtimeLoading, setRuntimeLoading] = useState(true);
   const [emergencyStopping, setEmergencyStopping] = useState(false);
   const [emergencyResult, setEmergencyResult] = useState<{success: boolean; message: string} | null>(null);
 
@@ -73,6 +104,15 @@ export default function DashboardPage() {
       .then((res) => res.json())
       .then((data) => setHealth(data))
       .catch(() => setHealth({ status: 'error' }));
+
+    // Fetch runtime state
+    fetch('/api/v1/runtime/state')
+      .then((res) => res.json())
+      .then((data) => {
+        setRuntimeState(data);
+        setRuntimeLoading(false);
+      })
+      .catch(() => setRuntimeLoading(false));
   }, []);
 
   const healthChip = health.status === 'healthy'
@@ -80,6 +120,38 @@ export default function DashboardPage() {
     : health.status === 'checking'
     ? { label: 'Checking...', bg: '#dbeafe', color: '#1e40af' }
     : { label: 'Degraded', bg: '#fee2e2', color: '#991b1b' };
+
+  // Helper to format time ago
+  const formatTimeAgo = (dateStr: string | null) => {
+    if (!dateStr) return '—';
+    const date = new Date(dateStr);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    if (diffMins < 1) return 'just now';
+    if (diffMins < 60) return `${diffMins}m ago`;
+    const diffHours = Math.floor(diffMins / 60);
+    if (diffHours < 24) return `${diffHours}h ago`;
+    return `${Math.floor(diffHours / 24)}d ago`;
+  };
+
+  // Get status color
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'active': return '#3b82f6';
+      case 'pending': return '#f59e0b';
+      default: return '#94a3b8';
+    }
+  };
+
+  // Get status bg
+  const getStatusBg = (status: string) => {
+    switch (status) {
+      case 'active': return '#dbeafe';
+      case 'pending': return '#fef3c7';
+      default: return '#f1f5f9';
+    }
+  };
 
   return (
     <Box sx={{ p: 3 }}>
@@ -120,22 +192,99 @@ export default function DashboardPage() {
           <CardHeader
             title="Gate Pipeline"
             action={
-              <Link href="/stories" style={{ color: '#3b82f6', fontSize: '0.875rem', textDecoration: 'none' }}>
-                View all
-              </Link>
+              runtimeState ? (
+                <Chip 
+                  label={`${runtimeState.activeAgentCount} active`} 
+                  size="small" 
+                  sx={{ bgcolor: runtimeState.activeAgentCount > 0 ? '#dbeafe' : '#f1f5f9', color: runtimeState.activeAgentCount > 0 ? '#1e40af' : '#64748b' }}
+                />
+              ) : null
             }
             titleTypographyProps={{ variant: 'h6', fontSize: '1rem' }}
           />
           <CardContent>
-            {['architect', 'ui-designer', 'implementer', 'reviewer-a', 'operator', 'reviewer-b'].map((gate, i) => (
-              <Box key={gate}>
-                {i > 0 && <Divider sx={{ my: 1 }} />}
+            {runtimeLoading ? (
+              <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
+                <CircularProgress size={24} />
+              </Box>
+            ) : runtimeState?.pipeline.map((gate) => (
+              <Box key={gate.gate}>
+                <Divider sx={{ my: 1 }} />
                 <Box display="flex" justifyContent="space-between" alignItems="center" py={0.5}>
-                  <Typography variant="body2" sx={{ textTransform: 'capitalize' }}>{gate}</Typography>
-                  <Chip label="pipeline stage" size="small" variant="outlined" sx={{ fontSize: '0.7rem' }} />
+                  <Typography variant="body2" sx={{ textTransform: 'capitalize', fontWeight: gate.status === 'active' ? 600 : 400 }}>
+                    {gate.gate}
+                  </Typography>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    {gate.activeStory && (
+                      <Typography variant="caption" color="text.secondary" sx={{ maxWidth: 150, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {gate.activeStory.title}
+                      </Typography>
+                    )}
+                    <Chip 
+                      label={gate.status} 
+                      size="small" 
+                      sx={{ 
+                        fontSize: '0.7rem',
+                        bgcolor: getStatusBg(gate.status),
+                        color: getStatusColor(gate.status),
+                        textTransform: 'capitalize'
+                      }} 
+                    />
+                  </Box>
                 </Box>
+                {gate.status === 'active' && (
+                  <Box sx={{ pl: 2, py: 0.5 }}>
+                    <Typography variant="caption" color="text.secondary" display="block">
+                      {gate.model || 'No model'} · {formatTimeAgo(gate.startedAt)}
+                    </Typography>
+                  </Box>
+                )}
+                {gate.lastEvent && gate.status !== 'active' && (
+                  <Box sx={{ pl: 2, py: 0.5 }}>
+                    <Typography variant="caption" color="text.secondary" display="block">
+                      Last: {formatTimeAgo(gate.lastEvent)} {gate.model && `· ${gate.model}`}
+                    </Typography>
+                  </Box>
+                )}
               </Box>
             ))}
+            {!runtimeLoading && !runtimeState && (
+              <Typography variant="body2" color="text.secondary">
+                No pipeline data available
+              </Typography>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader title="Active Agents" titleTypographyProps={{ variant: 'h6', fontSize: '1rem' }} />
+          <CardContent sx={{ pt: 0, maxHeight: 300, overflow: 'auto' }}>
+            {runtimeLoading ? (
+              <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
+                <CircularProgress size={24} />
+              </Box>
+            ) : runtimeState?.activeSessions && runtimeState.activeSessions.length > 0 ? (
+              runtimeState.activeSessions.map((session) => (
+                <Box key={session.id} sx={{ mb: 1.5, pb: 1.5, borderBottom: '1px solid', borderColor: 'divider' }}>
+                  <Box display="flex" justifyContent="space-between" alignItems="center">
+                    <Typography variant="body2" fontWeight={500}>
+                      {session.gate}
+                    </Typography>
+                    <Chip label="active" size="small" sx={{ fontSize: '0.65rem', bgcolor: '#dbeafe', color: '#1e40af' }} />
+                  </Box>
+                  <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 0.5 }}>
+                    {session.storyTitle}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary" display="block">
+                    {session.model || 'No model'} · {formatTimeAgo(session.startedAt)}
+                  </Typography>
+                </Box>
+              ))
+            ) : (
+              <Typography variant="body2" color="text.secondary">
+                No active agents
+              </Typography>
+            )}
           </CardContent>
         </Card>
 

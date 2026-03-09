@@ -2,6 +2,7 @@ import { prisma } from '@/lib/prisma';
 import { Story, StoryGateInfo, CreateStoryInput } from '@/domain/story';
 import { GATES } from '@/domain/workflow-types';
 import { v4 as uuidv4 } from 'uuid';
+import { Prisma } from '@prisma/client';
 
 export async function createStoryInDB(input: CreateStoryInput): Promise<Story> {
   try {
@@ -92,6 +93,9 @@ export async function saveGateCompletion(data: {
   status: string;
   evidence: unknown;
   completedBy: string;
+  pickedUpAt?: Date;       // When gate was dispatched/picked up
+  finalMessage?: string;  // Final agent output/summary
+  artifacts?: unknown[];   // Screenshot URLs, links, metadata
 }): Promise<void> {
   try {
     await prisma.storyGate.upsert({
@@ -106,6 +110,9 @@ export async function saveGateCompletion(data: {
         evidence: data.evidence as object ?? undefined,
         completedAt: data.status !== 'pending' ? new Date() : null,
         completedBy: data.completedBy,
+        pickedUpAt: data.pickedUpAt ?? undefined,
+        finalMessage: data.finalMessage ?? null,
+        artifacts: data.artifacts as object ?? null,
       },
       create: {
         id: uuidv4(),
@@ -115,6 +122,9 @@ export async function saveGateCompletion(data: {
         evidence: data.evidence as object ?? undefined,
         completedAt: data.status !== 'pending' ? new Date() : null,
         completedBy: data.completedBy,
+        pickedUpAt: data.pickedUpAt ?? undefined,
+        finalMessage: data.finalMessage ?? null,
+        artifacts: data.artifacts as object ?? null,
       },
     });
   } catch (error) {
@@ -156,6 +166,9 @@ interface PrismaStoryWithGates {
     status: string;
     completedAt: Date | null;
     completedBy: string | null;
+    pickedUpAt: Date | null;         // When gate was dispatched/picked up
+    finalMessage: string | null;     // Final agent output/summary
+    artifacts: Prisma.JsonValue;     // Screenshot URLs, links, metadata
   }>;
   attachments?: Array<{
     id: string;
@@ -204,8 +217,11 @@ function mapPrismaToDomain(prismaStory: PrismaStoryWithGates): Story {
   const gateInfos: StoryGateInfo[] = (prismaStory.gates || []).map((g) => ({
     gate: g.gate,
     status: g.status,
+    pickedUpAt: g.pickedUpAt,
     completedAt: g.completedAt,
     completedBy: g.completedBy,
+    finalMessage: g.finalMessage || undefined,
+    artifacts: (g.artifacts as unknown as StoryGateInfo['artifacts']) || undefined,
   }));
 
   // Map attachments to StoryAttachmentRef format

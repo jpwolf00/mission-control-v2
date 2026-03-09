@@ -40,13 +40,27 @@ export interface StoryMetadata {
 }
 
 /**
+ * Gate artifact for screenshots, logs, and evidence links
+ */
+export interface GateArtifact {
+  type: 'screenshot' | 'log' | 'link';
+  url: string;
+  description?: string;
+  timestamp?: string;
+}
+
+/**
  * Gate completion info returned in API responses
+ * Enhanced with run telemetry and artifacts (MC2 Gate Observability)
  */
 export interface StoryGateInfo {
   gate: string;
   status: string;
-  completedAt?: Date | null;
+  pickedUpAt?: Date | string | null;   // When gate was dispatched/picked up
+  completedAt?: Date | string | null;  // When gate completed
   completedBy?: string | null;
+  finalMessage?: string | null;         // Final agent output/summary
+  artifacts?: GateArtifact[];           // Screenshots, logs, evidence
 }
 
 /**

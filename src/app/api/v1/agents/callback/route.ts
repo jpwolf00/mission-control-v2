@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { sessionId, agentId, role, event, evidence, error: agentError, invocationCount } = body as {
+    const { sessionId, agentId, role, event, evidence, error: agentError, invocationCount, pickedUpAt, finalMessage, artifacts } = body as {
       sessionId: string;
       agentId: string;
       role: string;
@@ -34,6 +34,14 @@ export async function POST(request: NextRequest) {
       evidence?: unknown[];
       error?: string;
       invocationCount?: number;
+      pickedUpAt?: number;         // Unix timestamp for when gate was picked up
+      finalMessage?: string;      // Final agent output/summary
+      artifacts?: {                // Screenshot/evidence artifacts
+        type: 'screenshot' | 'log' | 'link';
+        url: string;
+        description?: string;
+        timestamp?: number;
+      }[];
     };
 
     if (!sessionId || !agentId || !role || !event) {
@@ -82,12 +90,18 @@ export async function POST(request: NextRequest) {
 
         if (!existingApproved) {
           const callbackEvidence = Array.isArray(evidence) ? evidence : [];
+          // Convert pickedUpAt from Unix timestamp to Date if provided
+          const pickedUpDate = pickedUpAt ? new Date(pickedUpAt * 1000) : undefined;
+          
           await saveGateCompletion({
             storyId: session.storyId,
             gate: session.gate,
             status: 'approved',
             evidence: callbackEvidence,
             completedBy: agentId,
+            pickedUpAt: pickedUpDate,
+            finalMessage: finalMessage,
+            artifacts: artifacts,
           });
 
           if (session.gate === 'reviewer-b') {
