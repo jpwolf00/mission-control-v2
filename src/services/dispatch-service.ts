@@ -19,6 +19,22 @@ interface DispatchResult {
   code?: DispatchReturnCode;
 }
 
+// Default model/provider for dispatch when none specified
+// These are fallbacks - the agent may use different values based on its config
+const DEFAULT_MODEL = process.env.MC2_DEFAULT_MODEL || 'alibaba/qwen3.5-plus';
+const DEFAULT_PROVIDER = process.env.MC2_DEFAULT_PROVIDER || 'alibaba';
+
+/**
+ * Get default model and provider for dispatch
+ * Used when caller doesn't specify model/provider
+ */
+function getDefaultModelProvider(): { model: string; provider: string } {
+  return {
+    model: DEFAULT_MODEL,
+    provider: DEFAULT_PROVIDER,
+  };
+}
+
 // Hard guard: never create a second active run for the same story+gate.
 // Previous TTL-based dedupe caused duplicate runs when long gates exceeded the TTL.
 
@@ -71,6 +87,9 @@ export async function dispatchStory(
     estimatedInvocations?: number;
   }
 ): Promise<DispatchResult> {
+  // Use defaults if model/provider not specified
+  const model = options?.model || getDefaultModelProvider().model;
+  const provider = options?.provider || getDefaultModelProvider().provider;
   // DB-backed idempotency: if we already saw this key, return existing session.
   const existingByKey = await prisma.runSession.findFirst({
     where: { idempotencyKey },
@@ -141,8 +160,8 @@ export async function dispatchStory(
   // Perform admission checks (budget, provider denylist, etc.)
   const admissionCheck = await performAdmissionChecks(
     storyId,
-    options?.provider,
-    options?.model
+    provider,
+    model
   );
   if (!admissionCheck.allowed) {
     return admissionCheck.result;
@@ -161,7 +180,7 @@ export async function dispatchStory(
   }
 
   // Persist session before external dispatch.
-  // Set model/provider from options - these will be updated later if OpenClaw reports different values
+  // Set model/provider - these will be updated later if OpenClaw reports different values
   await prisma.runSession.create({
     data: {
       id: sessionId,
@@ -171,8 +190,8 @@ export async function dispatchStory(
       startedAt: new Date(),
       idempotencyKey,
       dispatchAttempts: 1,
-      provider: options?.provider || null,
-      model: options?.model || null,
+      provider,
+      model,
       estimatedInvocations: options?.estimatedInvocations || 0,
       metadata: {
         gateRole: gateToRole(gateTyped),
@@ -186,23 +205,23 @@ export async function dispatchStory(
   }
 
   // Trigger Openclaw agent for this gate
-  // Pass model/provider if specified in dispatch options
+  // Pass model/provider (will use defaults if not specified)
   const triggerResult = await triggerAgent({
     storyId,
     gate: gateTyped,
     sessionId,
     role: gateToRole(gateTyped),
     context: { story },
-    model: options?.model,
-    provider: options?.provider,
+    model,
+    provider,
   });
 
   if (!triggerResult.success) {
     // Record provider failure if applicable
-    if (options?.provider) {
+    if (provider) {
       await recordProviderFailure(
-        options.provider,
-        options.model,
+        provider,
+        model,
         triggerResult.error || 'Unknown trigger error'
       );
     }
