@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Commercial Art Consulting | Corporate & Hospitality | ART Consulting",
+  title: "Commercial Art Consulting | Corporate & Hospitality | ART Consulting NYC",
   description: "Elevate your business with professional art consulting. From corporate offices to hotels and retail spaces, create environments that inspire and impress.",
   keywords: ["commercial art consulting", "corporate art program", "hotel art curation", "office art installation", "retail art design"],
 };

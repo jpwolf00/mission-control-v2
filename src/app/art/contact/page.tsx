@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "Contact Us | ART Consulting - Let's Create Together",
-  description: "Get in touch with ART Consulting. Schedule a consultation for art curation and installation services. We typically respond within 24 hours.",
+  description: "Get in touch with ART Consulting. Schedule a consultation for art curation and installation services in NYC. We typically respond within 24 hours.",
   keywords: ["contact art consultant", "art consultation", "schedule art consultation", "NYC art advisor", "art installation inquiry"],
 };
 

@@ -3,11 +3,19 @@ import { requireIdempotencyKey } from '@/api/v1/idempotency';
 import { completeSession, getSession, autoDispatchNextGate } from '@/services/dispatch-service';
 import { getStoryByIdFromDB, saveGateCompletion, updateStoryStatus } from '@/services/story-store-db';
 import { incrementInvocationCount } from '@/services/budget-service';
+import { requireAuth } from '@/lib/auth-middleware';
 import type { Gate } from '@/domain/workflow-types';
 
 type CallbackEvent = 'completed' | 'failed' | 'heartbeat' | 'invocation';
 
 export async function POST(request: NextRequest) {
+  // Step 1: Validate authentication
+  const authError = requireAuth(request);
+  if (authError) {
+    return authError;
+  }
+
+  // Step 2: Validate idempotency key
   const idempotencyCheck = requireIdempotencyKey(request.headers);
   if (!idempotencyCheck.ok) {
     return NextResponse.json(

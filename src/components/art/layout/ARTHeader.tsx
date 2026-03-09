@@ -15,6 +15,7 @@ const artNavItems = [
   { href: '/art/about', label: 'About' },
   { href: '/art/services', label: 'Services' },
   { href: '/art/projects', label: 'Projects' },
+  { href: '/art/updates', label: 'Updates' },
   { href: '/art/contact', label: 'Contact' },
 ];
 

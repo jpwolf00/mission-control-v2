@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build && cp .next/static/css/*.css .next/static/chunks/",
+    "build": "next build",
     "start": "next start",
     "lint": "eslint",
     "test": "vitest",

@@ -1,6 +1,9 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Button from '@mui/material/Button';
+import Alert from '@mui/material/Alert';
+import CircularProgress from '@mui/material/CircularProgress';
 import Link from 'next/link';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
@@ -29,6 +32,27 @@ interface HealthStatus {
 export default function DashboardPage() {
   const [counts, setCounts] = useState<StoryCount>({ total: 0, active: 0, draft: 0, completed: 0, blocked: 0 });
   const [health, setHealth] = useState<HealthStatus>({ status: 'checking' });
+  const [emergencyStopping, setEmergencyStopping] = useState(false);
+  const [emergencyResult, setEmergencyResult] = useState<{success: boolean; message: string} | null>(null);
+
+  const handleEmergencyStop = async () => {
+    if (!confirm('EMERGENCY STOP: Kill all active sessions? This will halt all running agent tasks.')) return;
+    setEmergencyStopping(true);
+    setEmergencyResult(null);
+    try {
+      const res = await fetch('/api/v1/agents/emergency-stop', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ all: true }),
+      });
+      const data = await res.json();
+      setEmergencyResult({ success: res.ok, message: data.message || JSON.stringify(data) });
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      setEmergencyResult({ success: false, message: msg });
+    }
+    setEmergencyStopping(false);
+  };
 
   useEffect(() => {
     fetch('/api/v1/stories')
@@ -128,6 +152,24 @@ export default function DashboardPage() {
                 <Typography color="text.secondary">&rarr;</Typography>
               </ListItemButton>
             </List>
+            <Box mt={2} pt={2} borderTop="1px solid" borderColor="divider">
+              {emergencyResult && (
+                <Alert severity={emergencyResult.success ? 'success' : 'error'} sx={{ mb: 1 }}>
+                  {emergencyResult.message}
+                </Alert>
+              )}
+              <Button
+                fullWidth
+                variant="outlined"
+                color="error"
+                size="small"
+                onClick={handleEmergencyStop}
+                disabled={emergencyStopping}
+                startIcon={emergencyStopping ? <CircularProgress size={14} color="inherit" /> : null}
+              >
+                {emergencyStopping ? 'Stopping...' : '🛑 Emergency Stop All'}
+              </Button>
+            </Box>
           </CardContent>
         </Card>
       </Box>

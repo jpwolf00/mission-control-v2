@@ -4,6 +4,7 @@ const envSchema = z.object({
   DATABASE_URL: z.string().min(1),
   NEXT_PUBLIC_API_URL: z.string().url().optional().default('http://localhost:3000'),
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
+  MC2_API_KEYS: z.string().optional().default('test-token,mc2-secret-key'),
 });
 
 let _env: z.infer<typeof envSchema> | null = null;

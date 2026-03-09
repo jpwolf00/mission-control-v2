@@ -2,8 +2,16 @@ import { NextRequest, NextResponse } from 'next/server';
 import { dispatchStory } from '@/services/dispatch-service';
 import { requireIdempotencyKey } from '@/api/v1/idempotency';
 import { DISPATCH_RETURN_CODES } from '@/domain/budget-types';
+import { requireAuth } from '@/lib/auth-middleware';
 
 export async function POST(request: NextRequest) {
+  // Step 1: Validate authentication
+  const authError = requireAuth(request);
+  if (authError) {
+    return authError;
+  }
+
+  // Step 2: Validate idempotency key
   const idempotencyCheck = requireIdempotencyKey(request.headers);
   if (!idempotencyCheck.ok) {
     return NextResponse.json(

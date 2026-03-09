@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "About Us | ART Consulting - Our Story & Approach",
-  description: "Learn about ART Consulting's mission to transform spaces through thoughtful art curation. Meet our team of expert curators and installation specialists.",
+  description: "Learn about ART Consulting's mission to transform spaces through thoughtful art curation. Meet our team of expert curators and installation specialists in NYC.",
   keywords: ["art consulting", "about art consultant", "art curation team", "NYC art consultants", "art installation experts"],
 };
 

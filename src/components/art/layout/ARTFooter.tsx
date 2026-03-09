@@ -7,7 +7,8 @@ import Typography from '@mui/material/Typography';
 import Grid from '@mui/material/Grid2';
 import LinkMUI from '@mui/material/Link';
 import Stack from '@mui/material/Stack';
-import { Palette, Mail, Phone, MapPin } from 'lucide-react';
+import IconButton from '@mui/material/IconButton';
+import { Palette, Mail, Phone, MapPin, Facebook } from 'lucide-react';
 
 const footerSections = [
   {
@@ -23,6 +24,7 @@ const footerSections = [
     links: [
       { href: '/art/about', label: 'About Us' },
       { href: '/art/projects', label: 'Projects' },
+      { href: '/art/updates', label: 'Updates' },
       { href: '/art/contact', label: 'Contact' },
     ]
   }
@@ -72,6 +74,22 @@ export function ARTFooter() {
                 <Typography variant="body2" color="text.secondary">
                   New York, NY
                 </Typography>
+              </Box>
+              <Box sx={{ display: 'flex', gap: 1, mt: 1 }}>
+                <IconButton
+                  component="a"
+                  href="https://facebook.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Facebook"
+                  size="small"
+                  sx={{ 
+                    color: 'text.secondary',
+                    '&:hover': { color: 'primary.main' }
+                  }}
+                >
+                  <Facebook size={20} />
+                </IconButton>
               </Box>
             </Stack>
           </Grid>
