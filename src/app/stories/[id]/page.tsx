@@ -17,6 +17,9 @@ import { GateDetails } from '@/components/gate-details';
 import { PageLoader } from '@/components/loading';
 import { ErrorMessage } from '@/components/error-message';
 import { AttachmentUpload } from '@/components/attachment-upload';
+import { StoryComments } from '@/components/story-comments';
+import { RevisionActions } from '@/components/revision-actions';
+import { RevisionHistory } from '@/components/revision-history';
 import { Story } from '@/domain/story';
 
 interface Attachment {
@@ -58,6 +61,7 @@ export default function StoryDetailPage() {
   const [approveSuccess, setApproveSuccess] = useState<string | null>(null);
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [attachmentsLoading, setAttachmentsLoading] = useState(false);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   const fetchStory = async () => {
     setLoading(true);
@@ -322,6 +326,31 @@ export default function StoryDetailPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Revision Actions - Show for completed/active stories */}
+      {(story.status === 'completed' || story.status === 'active') && (
+        <RevisionActions
+          storyId={storyId}
+          currentGate={story.currentGate}
+          onRevisionRequested={() => {
+            setRefreshTrigger((prev) => prev + 1);
+            fetchStory();
+          }}
+        />
+      )}
+
+      {/* Revision History */}
+      <RevisionHistory
+        storyId={storyId}
+        refreshTrigger={refreshTrigger}
+      />
+
+      {/* Story Comments */}
+      <StoryComments
+        storyId={storyId}
+        refreshTrigger={refreshTrigger}
+        onCommentAdded={() => setRefreshTrigger((prev) => prev + 1)}
+      />
     </Box>
   );
 }
