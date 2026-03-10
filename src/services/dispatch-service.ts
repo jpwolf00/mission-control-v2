@@ -181,13 +181,14 @@ export async function dispatchStory(
 
   // Persist session before external dispatch.
   // Set model/provider - these will be updated later if OpenClaw reports different values
+  const dispatchTime = new Date();
   await prisma.runSession.create({
     data: {
       id: sessionId,
       storyId,
       gate,
       status: 'active',
-      startedAt: new Date(),
+      startedAt: dispatchTime,
       idempotencyKey,
       dispatchAttempts: 1,
       provider,
@@ -196,6 +197,28 @@ export async function dispatchStory(
       metadata: {
         gateRole: gateToRole(gateTyped),
       },
+    },
+  });
+
+  // Set pickedUpAt on StoryGate at dispatch time (server-authoritative timestamp)
+  // This ensures accurate pickup time tracking regardless of agent clock/reporting
+  await prisma.storyGate.upsert({
+    where: {
+      storyId_gate: {
+        storyId,
+        gate,
+      },
+    },
+    update: {
+      pickedUpAt: dispatchTime,
+      status: 'in_progress',
+    },
+    create: {
+      id: uuidv4(),
+      storyId,
+      gate,
+      status: 'in_progress',
+      pickedUpAt: dispatchTime,
     },
   });
 

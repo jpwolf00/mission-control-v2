@@ -92,11 +92,25 @@ export async function saveGateCompletion(data: {
   status: string;
   evidence: unknown;
   completedBy: string;
-  pickedUpAt?: Date;       // When gate was dispatched/picked up
+  pickedUpAt?: Date;       // When gate was dispatched/picked up (optional - may already be set at dispatch)
   finalMessage?: string;  // Final agent output/summary
   artifacts?: unknown[];   // Screenshot URLs, links, metadata
 }): Promise<void> {
   try {
+    // Check if gate already exists to preserve pickedUpAt if not provided
+    const existingGate = await prisma.storyGate.findUnique({
+      where: {
+        storyId_gate: {
+          storyId: data.storyId,
+          gate: data.gate,
+        },
+      },
+      select: { pickedUpAt: true },
+    });
+
+    // Only update pickedUpAt if explicitly provided (dispatch sets it, callback should not overwrite)
+    const pickedUpAtValue = data.pickedUpAt ?? existingGate?.pickedUpAt ?? undefined;
+
     await prisma.storyGate.upsert({
       where: {
         storyId_gate: {
@@ -109,7 +123,7 @@ export async function saveGateCompletion(data: {
         evidence: data.evidence as object ?? undefined,
         completedAt: data.status !== 'pending' ? new Date() : null,
         completedBy: data.completedBy,
-        pickedUpAt: data.pickedUpAt ?? undefined,
+        pickedUpAt: pickedUpAtValue,
         finalMessage: data.finalMessage ?? null,
         artifacts: data.artifacts as object ?? null,
       },
@@ -121,14 +135,14 @@ export async function saveGateCompletion(data: {
         evidence: data.evidence as object ?? undefined,
         completedAt: data.status !== 'pending' ? new Date() : null,
         completedBy: data.completedBy,
-        pickedUpAt: data.pickedUpAt ?? undefined,
+        pickedUpAt: pickedUpAtValue,
         finalMessage: data.finalMessage ?? null,
         artifacts: data.artifacts as object ?? null,
       },
     });
   } catch (error) {
     console.error('Database error in saveGateCompletion:', error);
-    throw new Error('Failed to save gate completion');
+    throw Error('Failed to save gate completion');
   }
 }
 

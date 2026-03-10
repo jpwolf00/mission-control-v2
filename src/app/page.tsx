@@ -71,6 +71,8 @@ export default function DashboardPage() {
   const [runtimeLoading, setRuntimeLoading] = useState(true);
   const [emergencyStopping, setEmergencyStopping] = useState(false);
   const [emergencyResult, setEmergencyResult] = useState<{success: boolean; message: string} | null>(null);
+  const [lastRefreshed, setLastRefreshed] = useState<Date | null>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const handleEmergencyStop = async () => {
     if (!confirm('EMERGENCY STOP: Kill all active sessions? This will halt all running agent tasks.')) return;
@@ -91,10 +93,17 @@ export default function DashboardPage() {
     setEmergencyStopping(false);
   };
 
-  useEffect(() => {
-    fetch('/api/v1/stories')
-      .then((res) => res.json())
-      .then((data) => {
+  // Fetch all dashboard data
+  const fetchDashboardData = async () => {
+    try {
+      const [storiesRes, healthRes, runtimeRes] = await Promise.all([
+        fetch('/api/v1/stories'),
+        fetch('/api/v1/health'),
+        fetch('/api/v1/runtime/state'),
+      ]);
+
+      if (storiesRes.ok) {
+        const data = await storiesRes.json();
         const stories = data.stories || [];
         setCounts({
           total: stories.length,
@@ -103,22 +112,37 @@ export default function DashboardPage() {
           completed: stories.filter((s: { status: string }) => s.status === 'completed').length,
           blocked: stories.filter((s: { status: string }) => s.status === 'blocked').length,
         });
-      })
-      .catch(() => setCounts({ total: 0, active: 0, draft: 0, completed: 0, blocked: 0 }));
+      }
 
-    fetch('/api/v1/health')
-      .then((res) => res.json())
-      .then((data) => setHealth(data))
-      .catch(() => setHealth({ status: 'error' }));
+      if (healthRes.ok) {
+        const data = await healthRes.json();
+        setHealth(data);
+      }
 
-    // Fetch runtime state
-    fetch('/api/v1/runtime/state')
-      .then((res) => res.json())
-      .then((data) => {
+      if (runtimeRes.ok) {
+        const data = await runtimeRes.json();
         setRuntimeState(data);
-        setRuntimeLoading(false);
-      })
-      .catch(() => setRuntimeLoading(false));
+        setLastRefreshed(new Date());
+      }
+    } catch (error) {
+      console.error('Failed to fetch dashboard data:', error);
+    } finally {
+      setRuntimeLoading(false);
+      setIsRefreshing(false);
+    }
+  };
+
+  // Initial fetch + polling for live updates
+  useEffect(() => {
+    fetchDashboardData();
+
+    // Poll every 5 seconds for live telemetry updates
+    const pollInterval = setInterval(() => {
+      setIsRefreshing(true);
+      fetchDashboardData();
+    }, 5000);
+
+    return () => clearInterval(pollInterval);
   }, []);
 
   const healthChip = health.status === 'healthy'
@@ -196,15 +220,29 @@ export default function DashboardPage() {
       <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 2 }}>
         <Card>
           <CardHeader
-            title="Gate Pipeline"
+            title={
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                Gate Pipeline
+                {isRefreshing && (
+                  <CircularProgress size={14} sx={{ color: '#3b82f6' }} />
+                )}
+              </Box>
+            }
             action={
-              runtimeState ? (
-                <Chip 
-                  label={`${runtimeState.activeAgentCount} active`} 
-                  size="small" 
-                  sx={{ bgcolor: runtimeState.activeAgentCount > 0 ? '#dbeafe' : '#f1f5f9', color: runtimeState.activeAgentCount > 0 ? '#1e40af' : '#64748b' }}
-                />
-              ) : null
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                {runtimeState ? (
+                  <Chip 
+                    label={`${runtimeState.activeAgentCount} active`} 
+                    size="small" 
+                    sx={{ bgcolor: runtimeState.activeAgentCount > 0 ? '#dbeafe' : '#f1f5f9', color: runtimeState.activeAgentCount > 0 ? '#1e40af' : '#64748b' }}
+                  />
+                ) : null}
+                {lastRefreshed && (
+                  <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.65rem' }}>
+                    Updated {formatTimeAgo(lastRefreshed.toISOString())}
+                  </Typography>
+                )}
+              </Box>
             }
             titleTypographyProps={{ variant: 'h6', fontSize: '1rem' }}
           />
@@ -241,17 +279,27 @@ export default function DashboardPage() {
                 {gate.status === 'active' && (
                   <Box sx={{ pl: 2, py: 0.5 }}>
                     <Typography variant="caption" color="text.secondary" display="block">
-                      {gate.model || 'No model'} · Started {formatTimeAgo(gate.startedAt)}
-                      {gate.invocations > 0 && ` · ${gate.invocations} inv`}
-                      {gate.lastHeartbeatAt && ` · Heartbeat ${formatTimeAgo(gate.lastHeartbeatAt)}`}
+                      {gate.model || 'No model'}{gate.provider && <> ({gate.provider})</>} · Started {formatTimeAgo(gate.startedAt)}
+                      {gate.invocations > 0 && <> · {gate.invocations} inv</>}
+                      {gate.lastHeartbeatAt && <> · Heartbeat {formatTimeAgo(gate.lastHeartbeatAt)}</>}
                     </Typography>
+                    {gate.finalMessage && (
+                      <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 0.5, fontStyle: 'italic', maxWidth: '90%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {gate.finalMessage}
+                      </Typography>
+                    )}
                   </Box>
                 )}
                 {gate.lastEvent && gate.status !== 'active' && (
                   <Box sx={{ pl: 2, py: 0.5 }}>
                     <Typography variant="caption" color="text.secondary" display="block">
-                      Last: {formatTimeAgo(gate.lastEvent)} {gate.model && `· ${gate.model}`}
+                      Last: {formatTimeAgo(gate.lastEvent)} {gate.model && <>· {gate.model}{gate.provider && ` (${gate.provider})`}</>}
                     </Typography>
+                    {gate.finalMessage && (
+                      <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 0.5, fontStyle: 'italic', maxWidth: '90%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {gate.finalMessage}
+                      </Typography>
+                    )}
                   </Box>
                 )}
               </Box>
@@ -289,8 +337,8 @@ export default function DashboardPage() {
                     {session.storyTitle}
                   </Typography>
                   <Typography variant="caption" color="text.secondary" display="block">
-                    {session.model || 'No model'} · Started {formatTimeAgo(session.startedAt)}
-                    {session.lastHeartbeatAt && ` · Heartbeat ${formatTimeAgo(session.lastHeartbeatAt)}`}
+                    {session.model || 'No model'}{session.provider && <> ({session.provider})</>} · Started {formatTimeAgo(session.startedAt)}
+                    {session.lastHeartbeatAt && <> · Heartbeat {formatTimeAgo(session.lastHeartbeatAt)}</>}
                   </Typography>
                 </Box>
               ))

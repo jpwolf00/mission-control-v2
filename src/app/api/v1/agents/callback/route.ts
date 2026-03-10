@@ -104,8 +104,9 @@ export async function POST(request: NextRequest) {
             );
           }
           
-          // Convert pickedUpAt from Unix timestamp to Date if provided
-          const pickedUpDate = pickedUpAt ? new Date(pickedUpAt * 1000) : undefined;
+          // Note: pickedUpAt is now set at dispatch time (server-authoritative)
+          // We still accept it from agent callback for backwards compatibility,
+          // but saveGateCompletion will prefer existing value if already set
           
           await saveGateCompletion({
             storyId: session.storyId,
@@ -113,7 +114,7 @@ export async function POST(request: NextRequest) {
             status: 'approved',
             evidence: callbackEvidence,
             completedBy: agentId,
-            pickedUpAt: pickedUpDate,
+            pickedUpAt: undefined, // Let saveGateCompletion keep existing pickedUpAt from dispatch
             finalMessage: finalMessage,
             artifacts: artifacts,
           });
