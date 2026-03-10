@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Residential Art Consulting Lexington KY | Home Art Curation | ART Consulting",
-  description: "Transform your Lexington home with our residential art consulting services. Personalized curation and professional installation serving Lexington, Georgetown, Nicholasville, and Richmond KY.",
-  keywords: ["residential art consulting Lexington KY", "Lexington home art curation", "Lexington art consultant", "home art installation Lexington Kentucky", "Lexington residential art services"],
+  title: "Residential Art Consulting Lexington KY | Home Art Curation | ART Home Systems",
+  description: "Transform your Lexington home with our residential home systems services. Personalized curation and professional installation serving Lexington, Georgetown, Nicholasville, and Richmond KY.",
+  keywords: ["residential home systems Lexington KY", "Lexington home home technology", "Lexington art consultant", "home art installation Lexington Kentucky", "Lexington residential art services"],
 };
 
 import Box from '@mui/material/Box';

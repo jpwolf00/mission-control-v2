@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Art Consulting Services Lexington KY | Residential & Commercial | ART Consulting",
-  description: "Expert art consulting and installation services in Lexington, KY. From private home curation to corporate art programs, we serve Lexington, Georgetown, Nicholasville, and Richmond.",
-  keywords: ["art consulting Lexington KY", "Lexington art consultant", "Lexington art curation", "art installation Lexington Kentucky", "Lexington residential art", "Lexington commercial art"],
+  title: "Art Consulting Services Lexington KY | Residential & Commercial | ART Home Systems",
+  description: "Expert home systems and installation services in Lexington, KY. From private home entertainment systems to corporate AV programs, we serve Lexington, Georgetown, Nicholasville, and Richmond.",
+  keywords: ["home systems Lexington KY", "Lexington art consultant", "Lexington home technology", "art installation Lexington Kentucky", "Lexington residential art", "Lexington commercial art"],
 };
 
 import Box from '@mui/material/Box';
@@ -70,7 +70,7 @@ export default function ServicesPage() {
             Comprehensive Art Solutions
           </Typography>
           <Typography variant="body1" color="text.secondary" sx={{ fontSize: '1.15rem', maxWidth: 700, lineHeight: 1.7 }}>
-            We offer end-to-end art consulting and installation services for both residential 
+            We offer end-to-end home systems and installation services for both residential 
             and commercial clients. Whether you're furnishing a new home or designing 
             corporate spaces, our team brings expertise, passion, and a keen eye for 
             detail to every project.

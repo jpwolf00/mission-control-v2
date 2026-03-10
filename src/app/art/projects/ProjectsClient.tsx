@@ -16,7 +16,7 @@ const allProjects = [
     title: 'Modern Lexington Home',
     category: 'Residential',
     location: 'Lexington, KY',
-    description: 'A complete art curation for a luxury Lexington home, featuring contemporary works from emerging artists.',
+    description: 'A complete home technology integration for a luxury Lexington home, featuring contemporary works from emerging artists.',
     imageId: 'IMG-009',
     placeholderColor: '#667eea',
   },
@@ -25,7 +25,7 @@ const allProjects = [
     title: 'Georgetown Estate',
     category: 'Residential',
     location: 'Georgetown, KY',
-    description: 'Art selection and installation for a restored Georgetown estate, blending classic and contemporary pieces.',
+    description: 'Home AV installation and installation for a restored Georgetown estate, blending classic and contemporary pieces.',
     imageId: 'IMG-010',
     placeholderColor: '#764ba2',
   },
@@ -34,7 +34,7 @@ const allProjects = [
     title: 'Corporate Office Tower',
     category: 'Commercial',
     location: 'Lexington, KY',
-    description: 'Comprehensive art program for a corporate headquarters, creating a sophisticated work environment.',
+    description: 'Comprehensive AV installation program for a corporate headquarters, creating a sophisticated work environment.',
     imageId: 'IMG-011',
     placeholderColor: '#667eea',
   },
@@ -43,7 +43,7 @@ const allProjects = [
     title: 'Downtown Hotel',
     category: 'Commercial',
     location: 'Lexington, KY',
-    description: 'Statement art installations for a boutique hotel lobby and common areas, creating a distinctive guest experience.',
+    description: 'Statement AV installations for a boutique hotel lobby and common areas, creating a distinctive guest experience.',
     imageId: 'IMG-012',
     placeholderColor: '#764ba2',
   },
@@ -85,7 +85,7 @@ export default function ProjectsClient() {
             Featured Projects
           </Typography>
           <Typography variant="body1" color="text.secondary" sx={{ fontSize: '1.15rem', maxWidth: 600, lineHeight: 1.7 }}>
-            Explore our collection of residential and commercial art installations in Lexington, KY. 
+            Explore our collection of residential and commercial AV installations in Lexington, KY. 
             Each project reflects our commitment to transforming spaces through curated art 
             that tells a compelling story.
           </Typography>

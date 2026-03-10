@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "About Us | ART Consulting Lexington KY - Our Story & Approach",
-  description: "Learn about ART Consulting's mission to transform spaces through thoughtful art curation in Lexington, KY. Meet our team of expert curators and installation specialists serving Central Kentucky.",
-  keywords: ["art consulting Lexington KY", "about art consultant Lexington", "art curation team Kentucky", "Lexington art consultants", "art installation experts Lexington"],
+  title: "About Us | ART Home Systems Lexington KY - Our Story & Approach",
+  description: "Learn about ART Home Systems's mission to transform spaces through thoughtful home technology in Lexington, KY. Meet our team of expert curators and installation specialists serving Central Kentucky.",
+  keywords: ["home systems Lexington KY", "about art consultant Lexington", "home technology team Kentucky", "Lexington art consultants", "art installation experts Lexington"],
 };
 
 import Box from '@mui/material/Box';
@@ -61,9 +61,9 @@ export default function AboutPage() {
                 Bringing Art to Life
               </Typography>
               <Typography variant="body1" color="text.secondary" sx={{ fontSize: '1.1rem', lineHeight: 1.8 }}>
-                Founded in 2015, ART Consulting has been transforming residential and commercial 
-                spaces through thoughtful art curation and professional installation services. What started 
-                as a passion project has grown into one of New York's most trusted art consulting practices.
+                Founded in 2015, ART Home Systems has been transforming residential and commercial 
+                spaces through thoughtful home technology and professional installation services. What started 
+                as a passion project has grown into one of New York's most trusted home systems practices.
               </Typography>
               <Typography variant="body1" color="text.secondary" sx={{ fontSize: '1.1rem', lineHeight: 1.8, mt: 2 }}>
                 We believe that art has the power to transform not just spaces, but lives. 

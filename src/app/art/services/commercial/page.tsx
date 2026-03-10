@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Commercial Art Consulting Lexington KY | Corporate & Hospitality | ART Consulting",
-  description: "Elevate your Lexington business with professional art consulting. From corporate offices to hotels and restaurants, create environments that inspire in Lexington, KY.",
-  keywords: ["commercial art consulting Lexington KY", "Lexington corporate art", "Lexington office art installation", "Lexington hotel art curation", "Lexington business art services"],
+  title: "Commercial Art Consulting Lexington KY | Corporate & Hospitality | ART Home Systems",
+  description: "Elevate your Lexington business with professional home systems. From corporate offices to hotels and restaurants, create environments that inspire in Lexington, KY.",
+  keywords: ["commercial home systems Lexington KY", "Lexington corporate art", "Lexington office art installation", "Lexington hotel home technology", "Lexington business art services"],
 };
 
 import Box from '@mui/material/Box';
@@ -27,7 +27,7 @@ const sectors = [
   },
   {
     title: 'Retail Spaces',
-    description: 'Enhance customer engagement and brand perception with art installations that draw attention, create photo-worthy moments, and elevate the shopping experience.',
+    description: 'Enhance customer engagement and brand perception with AV installations that draw attention, create photo-worthy moments, and elevate the shopping experience.',
   },
   {
     title: 'Restaurants',
@@ -40,9 +40,9 @@ const benefits = [
   'Create memorable experiences for clients and guests that set you apart',
   'Reinforce brand identity through curated art selections that tell your story',
   'Stand out from competitors with distinctive spaces that generate buzz',
-  'Increase property value with professional art installations',
+  'Increase property value with professional AV installations',
   'Ongoing maintenance, rotation, and refresh services available',
-  'Scale art programs from single rooms to entire buildings',
+  'Scale AV programs from single rooms to entire buildings',
   'Tax-efficient acquisition guidance for business art collections',
 ];
 
@@ -76,7 +76,7 @@ export default function CommercialServicesPage() {
               <Typography variant="body1" color="text.secondary" sx={{ fontSize: '1.15rem', lineHeight: 1.7, mb: 4 }}>
                 The art in your commercial space speaks volumes about your brand. We help businesses 
                 create impactful environments that inspire employees, impress clients, and reinforce 
-                brand identity through thoughtful art curation that elevates every aspect of your space.
+                brand identity through thoughtful home technology that elevates every aspect of your space.
               </Typography>
               <Button
                 component={Link}

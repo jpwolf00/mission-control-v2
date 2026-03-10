@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "News & Updates | ART Consulting",
-  description: "Stay informed about the latest art trends, project showcases, and company news from ART Consulting.",
-  keywords: ["art consulting news", "art trends", "ART Consulting updates", "art installation news"],
+  title: "News & Updates | ART Home Systems",
+  description: "Stay informed about the latest art trends, project showcases, and company news from ART Home Systems.",
+  keywords: ["home systems news", "art trends", "ART Home Systems updates", "art installation news"],
 };
 
 import Box from '@mui/material/Box';
@@ -36,8 +36,8 @@ const updates = [
   },
   {
     id: '3',
-    title: 'ART Consulting Expands to Hotel & Hospitality Sector',
-    excerpt: 'We are thrilled to announce our expansion into the hotel and hospitality sector, bringing our expertise in art curation to create memorable guest experiences.',
+    title: 'ART Home Systems Expands to Hotel & Hospitality Sector',
+    excerpt: 'We are thrilled to announce our expansion into the hotel and hospitality sector, bringing our expertise in home technology to create memorable guest experiences.',
     date: 'February 15, 2026',
     category: 'Company News',
     imageId: 'IMG-016',
@@ -81,7 +81,7 @@ export default function UpdatesPage() {
           </Typography>
           <Typography variant="body1" color="text.secondary" sx={{ fontSize: '1.15rem', maxWidth: 600, lineHeight: 1.7 }}>
             Stay informed about the latest art trends, project showcases, and company news 
-            from ART Consulting. We share our expertise and passion for art curation 
+            from ART Home Systems. We share our expertise and passion for home technology 
             to inspire your next project.
           </Typography>
         </Container>

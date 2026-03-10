@@ -12,9 +12,9 @@ import ArrowRight from '@mui/icons-material/ArrowRight';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 
 export const metadata: Metadata = {
-  title: "FAQ | Frequently Asked Questions | ART Consulting Lexington KY",
-  description: "Answers to common questions about art consulting services in Lexington, KY. Learn about costs, service areas, timelines, and how we help residential and commercial clients.",
-  keywords: ["art consultant FAQ Lexington", "Lexington art consultation cost", "art installation Lexington KY", "FAQ art consulting Kentucky"],
+  title: "FAQ | Frequently Asked Questions | ART Home Systems Lexington KY",
+  description: "Answers to common questions about home systems services in Lexington, KY. Learn about costs, service areas, timelines, and how we help residential and commercial clients.",
+  keywords: ["art consultant FAQ Lexington", "Lexington art consultation cost", "art installation Lexington KY", "FAQ home systems Kentucky"],
 };
 
 const faqs = [
@@ -27,19 +27,19 @@ const faqs = [
     answer: "We proudly serve Lexington and the surrounding areas including Georgetown, Nicholasville, Richmond, Winchester, and the greater Lexington-Fayette metropolitan area. We also travel to surrounding counties for larger commercial projects. Contact us to discuss your specific location.",
   },
   {
-    question: "How long does art installation take?",
+    question: "How long does AV installation take?",
     answer: "Timeline varies by project scope. Small residential installations typically take 1-2 days. Larger residential projects or commercial installations can take 1-3 weeks depending on the number of pieces, custom framing needs, and installation complexity. We'll provide a detailed timeline during consultation.",
   },
   {
     question: "Do you work with commercial clients in Lexington?",
-    answer: "Absolutely! We have extensive experience with corporate offices, hotels, restaurants, retail spaces, and other commercial properties in Lexington. We understand the unique needs of businesses and can create art programs that enhance brand identity, impress clients, and inspire employees.",
+    answer: "Absolutely! We have extensive experience with corporate offices, hotels, restaurants, retail spaces, and other commercial properties in Lexington. We understand the unique needs of businesses and can create AV programs that enhance brand identity, impress clients, and inspire employees.",
   },
   {
     question: "Can you help with art selection for new construction homes?",
     answer: "Yes, we love working with homeowners and builders on new construction projects. We can collaborate with your interior designer or work directly with you to select art that complements your home's architecture and design from the beginning, ensuring proper lighting and placement considerations are built in.",
   },
   {
-    question: "What is included in your art installation service?",
+    question: "What is included in your AV installation service?",
     answer: "Our installation service includes hardware selection, precise hanging, level adjustment, lighting optimization, and final positioning. We handle all aspects of installation including wall anchors, specialized mounting for heavy pieces, and placement consultation to ensure optimal viewing and aesthetic impact.",
   },
   {
@@ -78,7 +78,7 @@ export default function FAQPage() {
             Frequently Asked Questions
           </Typography>
           <Typography variant="body1" color="text.secondary" sx={{ fontSize: '1.15rem', maxWidth: 700, lineHeight: 1.7 }}>
-            Find answers to common questions about our art consulting and installation services 
+            Find answers to common questions about our home systems and installation services 
             in Lexington, KY. Can't find what you're looking for? Get in touch!
           </Typography>
         </Container>
@@ -125,7 +125,7 @@ export default function FAQPage() {
               Still Have Questions?
             </Typography>
             <Typography variant="body1" color="text.secondary" sx={{ mb: 4, maxWidth: 500, mx: 'auto' }}>
-              We're here to help! Reach out to discuss your specific art consulting needs.
+              We're here to help! Reach out to discuss your specific home systems needs.
             </Typography>
             <Button
               component={Link}
