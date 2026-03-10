@@ -27,6 +27,7 @@ import RadioButtonUncheckedIcon from '@mui/icons-material/RadioButtonUnchecked';
 import CircularProgress from '@mui/material/CircularProgress';
 import { StoryGateInfo } from '@/domain/story';
 import { Gate } from '@/domain/workflow-types';
+import { isMissingRequiredScreenshot } from '@/domain/gate-contracts';
 
 interface GateDetailsProps {
   gates: StoryGateInfo[];
@@ -147,6 +148,11 @@ export function GateDetails({ gates, currentGate }: GateDetailsProps) {
   const gateMap = new Map<string, StoryGateInfo>();
   gates.forEach(g => gateMap.set(g.gate, g));
 
+  // Check if a gate is missing required screenshot artifact
+  const isMissingScreenshot = (gateInfo: StoryGateInfo): boolean => {
+    return isMissingRequiredScreenshot(gateInfo.gate as Gate, gateInfo.artifacts);
+  };
+
   // Check if we have any telemetry data
   const hasTelemetry = gates.some(g => 
     g.pickedUpAt || 
@@ -250,6 +256,17 @@ export function GateDetails({ gates, currentGate }: GateDetailsProps) {
                           <Typography variant="body2" color="primary" sx={{ fontSize: '0.75rem', fontStyle: 'italic' }}>
                             In progress...
                           </Typography>
+                        )}
+                        {/* Show warning if reviewer gate is missing required screenshot */}
+                        {gateInfo && gateInfo.status === 'approved' && isMissingScreenshot(gateInfo) && (
+                          <Tooltip title="Reviewer gate approved without required screenshot evidence">
+                            <Chip
+                              label="Missing Screenshot"
+                              size="small"
+                              color="warning"
+                              sx={{ fontSize: '0.65rem', height: 18, ml: 1, bgcolor: '#fff7ed', color: '#c2410c' }}
+                            />
+                          </Tooltip>
                         )}
                         {/* Show telemetry badge if available */}
                         {hasTelemetryData && (

@@ -43,12 +43,17 @@ export type GateEvidence = {
   payload?: Record<string, unknown>;
 };
 
+// Artifact types for screenshots, logs, and evidence links
+export const ARTIFACT_TYPES = ['screenshot', 'log', 'link'] as const;
+export type ArtifactType = (typeof ARTIFACT_TYPES)[number];
+
 // Gate-specific completion requirements
 export type GateRequirements = {
   requiredEvidence: EvidenceType[];
   minEvidenceCount: number;
   allowManualOverride: boolean;
   autoApproveOnComplete?: boolean;
+  requiredArtifacts?: ArtifactType[]; // Optional: require specific artifact types for gate completion
 };
 
 // Default requirements for each gate
@@ -75,7 +80,8 @@ export const GATE_REQUIREMENTS: Record<Gate, GateRequirements> = {
     requiredEvidence: ["review_comment", "test_result"],
     minEvidenceCount: 2,
     allowManualOverride: true,
-    autoApproveOnComplete: false
+    autoApproveOnComplete: false,
+    requiredArtifacts: ["screenshot"] // Reviewer must include screenshot evidence
   },
   operator: {
     requiredEvidence: ["deployment_record"],
@@ -87,7 +93,8 @@ export const GATE_REQUIREMENTS: Record<Gate, GateRequirements> = {
     requiredEvidence: ["review_comment", "manual_verification"],
     minEvidenceCount: 2,
     allowManualOverride: true,
-    autoApproveOnComplete: false
+    autoApproveOnComplete: false,
+    requiredArtifacts: ["screenshot"] // Reviewer must include screenshot evidence
   }
 };
 
@@ -305,4 +312,54 @@ export function createGateEvidence(
     source: options?.source,
     payload: options?.payload
   };
+}
+
+/**
+ * Validates that a gate completion includes required artifact types
+ * @param gate - The gate being completed
+ * @param artifacts - Array of artifacts provided
+ * @returns Validation result with error message if invalid
+ */
+export function validateGateArtifacts(
+  gate: Gate,
+  artifacts?: { type: string; url: string; description?: string }[]
+): { valid: true } | { valid: false; error: string } {
+  const requirements = GATE_REQUIREMENTS[gate];
+  
+  // If no artifact requirements for this gate, always valid
+  if (!requirements?.requiredArtifacts?.length) {
+    return { valid: true };
+  }
+  
+  // Check each required artifact type
+  for (const requiredType of requirements.requiredArtifacts) {
+    const hasArtifact = artifacts?.some((a) => a.type === requiredType);
+    if (!hasArtifact) {
+      return {
+        valid: false,
+        error: `Gate "${gate}" requires at least one "${requiredType}" artifact`,
+      };
+    }
+  }
+  
+  return { valid: true };
+}
+
+/**
+ * Checks if a gate is missing required screenshot artifacts
+ * @param gate - The gate name
+ * @param artifacts - Array of artifacts
+ * @returns True if screenshot is missing for a gate that requires it
+ */
+export function isMissingRequiredScreenshot(
+  gate: Gate,
+  artifacts?: { type: string }[]
+): boolean {
+  const requirements = GATE_REQUIREMENTS[gate];
+  
+  if (!requirements?.requiredArtifacts?.includes('screenshot')) {
+    return false;
+  }
+  
+  return !artifacts?.some((a) => a.type === 'screenshot');
 }

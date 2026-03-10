@@ -6,6 +6,7 @@ import { incrementInvocationCount } from '@/services/budget-service';
 import { requireAuth } from '@/lib/auth-middleware';
 import { prisma } from '@/lib/prisma';
 import type { Gate } from '@/domain/workflow-types';
+import { validateGateArtifacts } from '@/domain/gate-contracts';
 
 type CallbackEvent = 'completed' | 'failed' | 'heartbeat' | 'invocation';
 
@@ -93,6 +94,16 @@ export async function POST(request: NextRequest) {
 
         if (!existingApproved) {
           const callbackEvidence = Array.isArray(evidence) ? evidence : [];
+          
+          // Validate artifacts for gates that require them (e.g., reviewer gates require screenshots)
+          const artifactValidation = validateGateArtifacts(session.gate as Gate, artifacts);
+          if (!artifactValidation.valid) {
+            return NextResponse.json(
+              { error: artifactValidation.error },
+              { status: 422 }
+            );
+          }
+          
           // Convert pickedUpAt from Unix timestamp to Date if provided
           const pickedUpDate = pickedUpAt ? new Date(pickedUpAt * 1000) : undefined;
           
